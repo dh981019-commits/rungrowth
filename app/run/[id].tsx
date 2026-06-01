@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
+import { ProgressBar } from '@/components/ProgressBar';
 import {
   formatDistance,
   formatElapsedTime,
@@ -98,25 +99,83 @@ export default function RunDetailScreen() {
   return (
     <ScrollView contentContainerStyle={commonStyles.screen}>
       <View style={commonStyles.header}>
-        <Text style={commonStyles.eyebrow}>러닝 기록</Text>
-        <Text style={commonStyles.screenTitle}>기록 상세</Text>
+        <Text style={commonStyles.eyebrow}>러닝 결과</Text>
+        <Text style={commonStyles.screenTitle}>러닝 완료!</Text>
       </View>
 
-      <View style={styles.mapWrap}>
-        <MapView style={styles.map} initialRegion={initialRegion}>
-          {run.routeCoordinates.length > 0 ? (
-            <Marker coordinate={run.routeCoordinates[0]} title="시작" />
-          ) : null}
-          {run.routeCoordinates.length > 1 ? (
-            <>
-              <Polyline coordinates={run.routeCoordinates} strokeColor={colors.primary} strokeWidth={5} />
-              <Marker
-                coordinate={run.routeCoordinates[run.routeCoordinates.length - 1]}
-                title="종료"
-              />
-            </>
-          ) : null}
-        </MapView>
+      <View style={commonStyles.heroCard}>
+        <View style={commonStyles.rowBetween}>
+          <View style={commonStyles.flex}>
+            <Text style={commonStyles.cardLabel}>성장 결과</Text>
+            <Text style={styles.resultTitle}>+{runResult?.achievement.earnedHp ?? 0} HP</Text>
+            <Text style={commonStyles.bodyText}>{runResult?.stats.currentTier ?? '브론즈 러너'}</Text>
+          </View>
+          <View style={commonStyles.iconBadge}>
+            <Ionicons name="sparkles" size={24} color={colors.primary} />
+          </View>
+        </View>
+        <View style={styles.resultMetricRow}>
+          <View style={styles.resultMetric}>
+            <Text style={commonStyles.cardLabel}>총 거리</Text>
+            <Text style={styles.resultMetricValue}>{formatDistance(run.distanceMeters)}</Text>
+          </View>
+          <View style={styles.resultMetric}>
+            <Text style={commonStyles.cardLabel}>총 시간</Text>
+            <Text style={styles.resultMetricValue}>{formatElapsedTime(run.durationSeconds)}</Text>
+          </View>
+          <View style={styles.resultMetric}>
+            <Text style={commonStyles.cardLabel}>평균 페이스</Text>
+            <Text style={styles.resultMetricValue}>{formatPace(run.averagePaceSecondsPerKm)}</Text>
+          </View>
+        </View>
+        <Text style={commonStyles.bodyText}>
+          {runResult?.stats.nextTierMessage ?? '다음 티어까지 성장 기록을 쌓아보세요'}
+        </Text>
+        <ProgressBar progress={runResult?.stats.tierProgress ?? 0} />
+      </View>
+
+      <View style={commonStyles.card}>
+        {runResult?.achievement.pbUpdates.length ? (
+          <>
+            <Text style={commonStyles.cardTitle}>개인 최고기록 갱신!</Text>
+            {runResult.achievement.messages.map((message) => (
+              <View key={message} style={styles.celebrationRow}>
+                <Ionicons name="trophy" size={20} color={colors.accent} />
+                <Text style={[commonStyles.bodyText, styles.celebrationText]}>{message}</Text>
+              </View>
+            ))}
+            <Text style={commonStyles.metric}>+50 HP 보너스를 받았어요</Text>
+          </>
+        ) : (
+          <>
+            <Text style={commonStyles.cardTitle}>이번 러닝도 성장에 쌓였어요</Text>
+            <Text style={commonStyles.bodyText}>꾸준한 완주가 다음 기록을 만드는 중이에요.</Text>
+          </>
+        )}
+      </View>
+
+      <View style={commonStyles.card}>
+        <Text style={commonStyles.cardTitle}>획득 HP 내역</Text>
+        {runResult?.achievement.hpBreakdown.map((item) => (
+          <View key={item.label} style={commonStyles.recordRow}>
+            <Text style={commonStyles.bodyText}>{item.label}</Text>
+            <Text style={commonStyles.recordValue}>+{item.hp} HP</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={commonStyles.card}>
+        <View style={commonStyles.rowBetween}>
+          <View style={commonStyles.flex}>
+            <Text style={commonStyles.cardLabel}>티어 진행도</Text>
+            <Text style={commonStyles.cardTitle}>{runResult?.stats.currentTier ?? '브론즈 러너'}</Text>
+          </View>
+          <Text style={commonStyles.metric}>{runResult?.stats.totalHp ?? 0} HP</Text>
+        </View>
+        <ProgressBar progress={runResult?.stats.tierProgress ?? 0} />
+        <Text style={commonStyles.bodyText}>
+          {runResult?.stats.nextTierMessage ?? '다음 티어까지 성장 기록을 쌓아보세요'}
+        </Text>
       </View>
 
       <View style={styles.summaryGrid}>
@@ -134,30 +193,21 @@ export default function RunDetailScreen() {
         </View>
       </View>
 
-      <View style={commonStyles.card}>
-        <View style={commonStyles.rowBetween}>
-          <View>
-            <Text style={commonStyles.cardLabel}>획득 HP</Text>
-            <Text style={commonStyles.cardTitle}>+{runResult?.achievement.earnedHp ?? 0} HP</Text>
-          </View>
-          <Text style={commonStyles.metric}>{runResult?.stats.currentTier ?? '브론즈 러너'}</Text>
-        </View>
-        <Text style={commonStyles.bodyText}>
-          {runResult?.stats.nextTierMessage ?? '다음 티어까지 성장 기록을 쌓아보세요'}
-        </Text>
-        {runResult?.achievement.pbUpdates.length ? (
-          <View>
-            <Text style={commonStyles.cardTitle}>개인 최고기록 갱신!</Text>
-            {runResult.achievement.messages.map((message) => (
-              <Text key={message} style={commonStyles.bodyText}>
-                {message}
-              </Text>
-            ))}
-            <Text style={commonStyles.metric}>+50 HP 보너스를 받았어요</Text>
-          </View>
-        ) : (
-          <Text style={commonStyles.bodyText}>이번 러닝도 성장 기록에 반영됐어요.</Text>
-        )}
+      <View style={styles.mapWrap}>
+        <MapView style={styles.map} initialRegion={initialRegion}>
+          {run.routeCoordinates.length > 0 ? (
+            <Marker coordinate={run.routeCoordinates[0]} title="시작" />
+          ) : null}
+          {run.routeCoordinates.length > 1 ? (
+            <>
+              <Polyline coordinates={run.routeCoordinates} strokeColor={colors.primary} strokeWidth={5} />
+              <Marker
+                coordinate={run.routeCoordinates[run.routeCoordinates.length - 1]}
+                title="종료"
+              />
+            </>
+          ) : null}
+        </MapView>
       </View>
 
       <View style={commonStyles.card}>
@@ -197,6 +247,35 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceAlt
   },
   map: {
+    flex: 1
+  },
+  resultTitle: {
+    color: colors.text,
+    fontSize: 44,
+    fontWeight: '900'
+  },
+  resultMetricRow: {
+    flexDirection: 'row',
+    gap: 10
+  },
+  resultMetric: {
+    flex: 1,
+    gap: 4,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceAlt
+  },
+  resultMetricValue: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: '900'
+  },
+  celebrationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
+  },
+  celebrationText: {
     flex: 1
   },
   summaryGrid: {
