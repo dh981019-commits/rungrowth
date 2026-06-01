@@ -12,7 +12,7 @@ export default function CoursesScreen() {
       data={recommendedCourses}
       keyExtractor={(item) => item.id}
       contentContainerStyle={commonStyles.screen}
-      ListHeaderComponent={<ScreenHeader eyebrow="Courses" title="Training Routes" />}
+      ListHeaderComponent={<ScreenHeader eyebrow="코스" title="추천 러닝 코스" />}
       renderItem={({ item }) => (
         <View style={commonStyles.card}>
           <View style={commonStyles.rowBetween}>
@@ -30,7 +30,7 @@ export default function CoursesScreen() {
             <Text style={commonStyles.metric}>{item.elevation}</Text>
             <Text style={commonStyles.metric}>{item.duration}</Text>
           </View>
-          <Text style={commonStyles.supportingText}>{item.focus} focus</Text>
+          <Text style={commonStyles.supportingText}>{item.focus} 중심</Text>
         </View>
       )}
     />
