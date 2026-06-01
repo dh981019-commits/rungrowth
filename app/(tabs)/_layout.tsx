@@ -35,28 +35,28 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: '홈',
           tabBarIcon: tabIcon('home-outline', 'home')
         }}
       />
       <Tabs.Screen
         name="courses"
         options={{
-          title: 'Courses',
+          title: '코스',
           tabBarIcon: tabIcon('map-outline', 'map')
         }}
       />
       <Tabs.Screen
         name="progress"
         options={{
-          title: 'Progress',
+          title: '성장',
           tabBarIcon: tabIcon('bar-chart-outline', 'bar-chart')
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: '프로필',
           tabBarIcon: tabIcon('person-outline', 'person')
         }}
       />
