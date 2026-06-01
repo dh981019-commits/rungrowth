@@ -11,12 +11,12 @@ import { colors } from '@/theme/colors';
 export default function HomeScreen() {
   return (
     <ScrollView contentContainerStyle={commonStyles.screen}>
-      <ScreenHeader eyebrow="Today" title="Runner's Hi" />
+      <ScreenHeader eyebrow="오늘" title="Runner's Hi" />
 
       <View style={commonStyles.heroCard}>
         <View style={commonStyles.rowBetween}>
           <View style={commonStyles.flex}>
-            <Text style={commonStyles.cardLabel}>Daily mission</Text>
+            <Text style={commonStyles.cardLabel}>오늘의 러닝</Text>
             <Text style={commonStyles.cardTitle}>{homeSummary.dailyMission}</Text>
           </View>
           <View style={commonStyles.iconBadge}>
@@ -24,17 +24,17 @@ export default function HomeScreen() {
           </View>
         </View>
         <Text style={commonStyles.bodyText}>
-          Keep the effort light, finish feeling better, and protect your weekly rhythm.
+          무리하지 않고 기분 좋게, 이번 주 러닝 리듬을 이어가요.
         </Text>
       </View>
 
       <View style={commonStyles.statGrid}>
-        <StatPill label="Current streak" value={`${homeSummary.currentStreak} days`} />
-        <StatPill label="Week distance" value={homeSummary.weekDistance} />
+        <StatPill label="연속 러닝" value={`${homeSummary.currentStreak}일`} />
+        <StatPill label="이번 주 거리" value={homeSummary.weekDistance} />
       </View>
 
       <View style={commonStyles.card}>
-        <Text style={commonStyles.cardLabel}>Recommended course</Text>
+        <Text style={commonStyles.cardLabel}>추천 코스</Text>
         <Text style={commonStyles.cardTitle}>{homeSummary.recommendedCourse.name}</Text>
         <View style={commonStyles.metricRow}>
           <Text style={commonStyles.metric}>{homeSummary.recommendedCourse.distance}</Text>
@@ -46,7 +46,7 @@ export default function HomeScreen() {
 
       <View style={commonStyles.card}>
         <View style={commonStyles.rowBetween}>
-          <Text style={commonStyles.cardTitle}>Weekly goal</Text>
+          <Text style={commonStyles.cardTitle}>주간 목표</Text>
           <Text style={commonStyles.metric}>{homeSummary.weeklyGoal.label}</Text>
         </View>
         <ProgressBar progress={homeSummary.weeklyGoal.current / homeSummary.weeklyGoal.goal} />
@@ -54,7 +54,7 @@ export default function HomeScreen() {
 
       <Pressable style={commonStyles.primaryButton}>
         <Ionicons name="play" size={20} color="white" />
-        <Text style={commonStyles.primaryButtonText}>Start Planned Run</Text>
+        <Text style={commonStyles.primaryButtonText}>달리기 시작</Text>
       </Pressable>
     </ScrollView>
   );
