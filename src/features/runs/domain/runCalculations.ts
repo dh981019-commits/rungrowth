@@ -1,6 +1,9 @@
 import { RunCoordinate } from './runTypes';
 
 const EARTH_RADIUS_METERS = 6371000;
+const MIN_PACE_DISTANCE_METERS = 10;
+const MIN_PACE_DURATION_SECONDS = 1;
+const PACE_PENDING_LABEL = '측정 중';
 
 function toRadians(value: number) {
   return (value * Math.PI) / 180;
@@ -37,23 +40,36 @@ export function formatElapsedTime(totalSeconds: number) {
   return `${paddedMinutes}:${paddedSeconds}`;
 }
 
-export function formatPace(paceSecondsPerKm: number) {
-  if (!Number.isFinite(paceSecondsPerKm) || paceSecondsPerKm <= 0) {
-    return '--';
+export function formatPace(paceSecondsPerKm: number | null): string {
+  if (paceSecondsPerKm === null || !Number.isFinite(paceSecondsPerKm) || paceSecondsPerKm <= 0) {
+    return PACE_PENDING_LABEL;
   }
 
-  const minutes = Math.floor(paceSecondsPerKm / 60);
-  const seconds = Math.round(paceSecondsPerKm % 60);
+  const roundedPaceSeconds = Math.round(paceSecondsPerKm);
+  const minutes = Math.floor(roundedPaceSeconds / 60);
+  const seconds = roundedPaceSeconds % 60;
 
   return `${minutes}'${String(seconds).padStart(2, '0')}" /km`;
 }
 
-export function calculateAveragePace(durationSeconds: number, distanceMeters: number) {
+export function calculateAveragePace(durationSeconds: number, distanceMeters: number): number | null {
   const distanceKm = distanceMeters / 1000;
 
-  if (distanceKm <= 0) {
-    return 0;
+  if (
+    !Number.isFinite(durationSeconds) ||
+    !Number.isFinite(distanceMeters) ||
+    !Number.isFinite(distanceKm) ||
+    durationSeconds < MIN_PACE_DURATION_SECONDS ||
+    distanceMeters < MIN_PACE_DISTANCE_METERS
+  ) {
+    return null;
   }
 
-  return Math.round(durationSeconds / distanceKm);
+  const paceSecondsPerKm = durationSeconds / distanceKm;
+
+  if (!Number.isFinite(paceSecondsPerKm)) {
+    return null;
+  }
+
+  return Math.round(paceSecondsPerKm);
 }
