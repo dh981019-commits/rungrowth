@@ -2,6 +2,21 @@ export const homeSummary = {
   dailyMission: '3km 가볍게 리셋 러닝',
   currentStreak: 8,
   weekDistance: '18.4 km',
+  growth: {
+    period: '최근 30일 성장',
+    recordLabel: '5km 기록',
+    beforeRecord: '34:12',
+    afterRecord: '31:48',
+    improvement: '7.0% 향상',
+    growthIndex: 72,
+    message: '어제보다 러너에 가까워졌어요'
+  },
+  runnerTier: {
+    tier: 'Silver Runner II',
+    hiPoint: 78,
+    hiPointGoal: 100,
+    nextTierGap: 22
+  },
   recommendedCourse: {
     name: '리버사이드 리셋 코스',
     distance: '3.2 km',
