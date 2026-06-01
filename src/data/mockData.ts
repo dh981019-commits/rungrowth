@@ -1,13 +1,13 @@
 export const homeSummary = {
-  dailyMission: 'Easy 3 km reset run',
+  dailyMission: '3km 가볍게 리셋 러닝',
   currentStreak: 8,
   weekDistance: '18.4 km',
   recommendedCourse: {
-    name: 'River Loop Reset',
+    name: '리버사이드 리셋 코스',
     distance: '3.2 km',
-    difficulty: 'Easy',
+    difficulty: '쉬움',
     elevation: '+24 m',
-    duration: '22-28 min'
+    duration: '22-28분'
   },
   weeklyGoal: {
     current: 18.4,
@@ -19,43 +19,43 @@ export const homeSummary = {
 export const recommendedCourses = [
   {
     id: 'river-loop',
-    name: 'River Loop Reset',
-    area: 'Flat riverside path',
+    name: '리버사이드 리셋 코스',
+    area: '강변을 따라 달리는 평탄한 길',
     distance: '3.2 km',
-    difficulty: 'Easy',
+    difficulty: '쉬움',
     elevation: '+24 m',
-    duration: '22-28 min',
-    focus: 'Recovery'
+    duration: '22-28분',
+    focus: '회복'
   },
   {
     id: 'park-tempo',
-    name: 'Park Tempo Circuit',
-    area: 'Shaded city park loop',
+    name: '공원 템포 루프',
+    area: '그늘이 있는 도심 공원 순환 코스',
     distance: '5.0 km',
-    difficulty: 'Medium',
+    difficulty: '보통',
     elevation: '+62 m',
-    duration: '32-40 min',
-    focus: 'Tempo'
+    duration: '32-40분',
+    focus: '템포'
   },
   {
     id: 'hill-climb',
-    name: 'Hill Climb Builder',
-    area: 'Short climbs with wide sidewalks',
+    name: '언덕 빌드업 코스',
+    area: '짧은 오르막과 넓은 보도가 이어지는 길',
     distance: '4.4 km',
-    difficulty: 'Hard',
+    difficulty: '어려움',
     elevation: '+148 m',
-    duration: '36-46 min',
-    focus: 'Strength'
+    duration: '36-46분',
+    focus: '근력'
   },
   {
     id: 'sunset-bridge',
-    name: 'Sunset Bridge Run',
-    area: 'Open route with steady pacing',
+    name: '선셋 브리지 러닝',
+    area: '페이스를 안정적으로 잡기 좋은 탁 트인 코스',
     distance: '6.1 km',
-    difficulty: 'Medium',
+    difficulty: '보통',
     elevation: '+41 m',
-    duration: '40-50 min',
-    focus: 'Endurance'
+    duration: '40-50분',
+    focus: '지구력'
   }
 ];
 
@@ -68,26 +68,26 @@ export const progressSummary = {
   easyPaceMinutes: 74,
   activeDays: 4,
   consistency: 0.8,
-  nextMilestone: 'Complete two more easy runs to unlock the 10K Base plan',
+  nextMilestone: '가벼운 러닝 2회를 더 채우면 10K 베이스 플랜이 열려요',
   weeklyRuns: [
-    { id: 'mon', day: 'Mon', label: 'Easy', distance: '4.0 km', completed: true },
-    { id: 'wed', day: 'Wed', label: 'Tempo', distance: '5.2 km', completed: true },
-    { id: 'fri', day: 'Fri', label: 'Easy', distance: '3.1 km', completed: true },
-    { id: 'sat', day: 'Sat', label: 'Long', distance: '6.1 km', completed: true },
-    { id: 'sun', day: 'Sun', label: 'Reset', distance: '3.0 km', completed: false }
+    { id: 'mon', day: '월', label: '가볍게', distance: '4.0 km', completed: true },
+    { id: 'wed', day: '수', label: '템포', distance: '5.2 km', completed: true },
+    { id: 'fri', day: '금', label: '가볍게', distance: '3.1 km', completed: true },
+    { id: 'sat', day: '토', label: '롱런', distance: '6.1 km', completed: true },
+    { id: 'sun', day: '일', label: '리셋', distance: '3.0 km', completed: false }
   ]
 };
 
 export const profileStats = {
-  name: 'You',
-  plan: '5K Base Builder',
+  name: '나의 기록',
+  plan: '5K 베이스 빌더',
   streakDays: 8,
   totalDistance: '214.6 km',
   totalRuns: 57,
   bestRecords: [
-    { label: 'Fastest 1 km', value: '4:38' },
-    { label: 'Fastest 5 km', value: '25:12' },
-    { label: 'Longest run', value: '12.4 km' },
-    { label: 'Best weekly distance', value: '31.8 km' }
+    { label: '가장 빠른 1km', value: '4:38' },
+    { label: '가장 빠른 5km', value: '25:12' },
+    { label: '최장 거리', value: '12.4 km' },
+    { label: '최고 주간 거리', value: '31.8 km' }
   ]
 };
