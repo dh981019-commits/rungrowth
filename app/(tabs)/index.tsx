@@ -6,10 +6,14 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { StatPill } from '@/components/StatPill';
 import { homeSummary } from '@/data/mockData';
+import { useRunStats } from '@/features/runs/presentation/useRunStats';
 import { commonStyles } from '@/theme/commonStyles';
 import { colors } from '@/theme/colors';
 
 export default function HomeScreen() {
+  const { stats } = useRunStats();
+  const hasRuns = stats.hasRuns;
+
   return (
     <ScrollView contentContainerStyle={commonStyles.screen}>
       <ScreenHeader eyebrow="오늘" title="Runner's Hi" />
@@ -18,32 +22,30 @@ export default function HomeScreen() {
         <View style={commonStyles.rowBetween}>
           <View style={commonStyles.flex}>
             <Text style={commonStyles.cardLabel}>성장 카드</Text>
-            <Text style={commonStyles.cardTitle}>{homeSummary.growth.period}</Text>
+            <Text style={commonStyles.cardTitle}>
+              {hasRuns ? stats.currentTier : '첫 러닝을 시작해보세요'}
+            </Text>
           </View>
           <View style={commonStyles.iconBadge}>
             <Ionicons name="trending-up" size={24} color={colors.primary} />
           </View>
         </View>
         <View style={commonStyles.recordRow}>
-          <Text style={commonStyles.bodyText}>{homeSummary.growth.recordLabel}</Text>
-          <Text style={commonStyles.recordValue}>
-            {homeSummary.growth.beforeRecord} → {homeSummary.growth.afterRecord}
-          </Text>
+          <Text style={commonStyles.bodyText}>최근 PB</Text>
+          <Text style={commonStyles.recordValue}>{hasRuns ? stats.recentPbText : '기록 없음'}</Text>
         </View>
         <View style={commonStyles.metricRow}>
-          <Text style={commonStyles.metric}>{homeSummary.growth.improvement}</Text>
-          <Text style={commonStyles.metric}>성장지수 {homeSummary.growth.growthIndex}</Text>
+          <Text style={commonStyles.metric}>Hi Point {stats.totalHp} HP</Text>
+          <Text style={commonStyles.metric}>{stats.nextTierMessage}</Text>
         </View>
-        <Text style={commonStyles.bodyText}>
-          {homeSummary.growth.message}
-        </Text>
+        <Text style={commonStyles.bodyText}>{stats.growthMessage}</Text>
       </View>
 
       <View style={commonStyles.card}>
         <View style={commonStyles.rowBetween}>
           <View style={commonStyles.flex}>
             <Text style={commonStyles.cardLabel}>러너 등급</Text>
-            <Text style={commonStyles.cardTitle}>{homeSummary.runnerTier.tier}</Text>
+            <Text style={commonStyles.cardTitle}>{stats.currentTier}</Text>
           </View>
           <View style={commonStyles.iconBadge}>
             <Ionicons name="ribbon" size={24} color={colors.primary} />
@@ -51,19 +53,15 @@ export default function HomeScreen() {
         </View>
         <View style={commonStyles.rowBetween}>
           <Text style={commonStyles.bodyText}>Hi Point</Text>
-          <Text style={commonStyles.recordValue}>
-            {homeSummary.runnerTier.hiPoint} / {homeSummary.runnerTier.hiPointGoal}
-          </Text>
+          <Text style={commonStyles.recordValue}>{stats.totalHp} HP</Text>
         </View>
-        <ProgressBar progress={homeSummary.runnerTier.hiPoint / homeSummary.runnerTier.hiPointGoal} />
-        <Text style={commonStyles.bodyText}>
-          다음 등급까지 {homeSummary.runnerTier.nextTierGap} HP
-        </Text>
+        <ProgressBar progress={stats.tierProgress} />
+        <Text style={commonStyles.bodyText}>{stats.nextTierMessage}</Text>
       </View>
 
       <View style={commonStyles.statGrid}>
-        <StatPill label="연속 러닝" value={`${homeSummary.currentStreak}일`} />
-        <StatPill label="이번 주 거리" value={homeSummary.weekDistance} />
+        <StatPill label="총 러닝" value={`${stats.totalRuns}회`} />
+        <StatPill label="누적 거리" value={stats.totalDistance} />
       </View>
 
       <View style={commonStyles.card}>
