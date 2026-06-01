@@ -7,6 +7,7 @@ const RUNS_STORAGE_KEY = 'runners-hi:runs';
 export type RunPersistenceService = {
   save: (run: NewRunRecord) => Promise<RunRecord>;
   findById: (id: string) => Promise<RunRecord | null>;
+  findAll: () => Promise<RunRecord[]>;
 };
 
 export type SupabaseRunInsert = {
@@ -14,7 +15,7 @@ export type SupabaseRunInsert = {
   ended_at: string;
   duration_seconds: number;
   distance_meters: number;
-  average_pace_seconds_per_km: number;
+  average_pace_seconds_per_km: number | null;
   route_coordinates: RunRecord['routeCoordinates'];
   note?: string | null;
 };
@@ -65,6 +66,10 @@ export const localRunRepository: RunPersistenceService = {
   async findById(id) {
     const runs = await readRuns();
     return runs.find((run) => run.id === id) ?? null;
+  },
+
+  async findAll() {
+    return readRuns();
   }
 };
 
