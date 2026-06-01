@@ -29,6 +29,7 @@ export type RunAchievement = {
   earnedHp: number;
   distanceHp: number;
   pbBonusHp: number;
+  hpBreakdown: { label: string; hp: number }[];
   pbUpdates: PbUpdate[];
   messages: string[];
 };
@@ -119,17 +120,24 @@ export function calculateRunAchievement(run: RunRecord, previousRuns: RunRecord[
 
   const pbBonusHp = pbUpdates.length > 0 ? 50 : 0;
   const messages = pbUpdates.map((pbUpdate) => {
-    const previousText = pbUpdate.previousSeconds
-      ? `이전 ${formatElapsedTime(pbUpdate.previousSeconds)}`
-      : '첫 기록';
+    if (!pbUpdate.previousSeconds) {
+      return `첫 ${pbUpdate.label} 기록을 만들었어요 (${formatElapsedTime(pbUpdate.seconds)})`;
+    }
 
-    return `${pbUpdate.label} 기록이 새로워졌어요 (${previousText} → ${formatElapsedTime(pbUpdate.seconds)})`;
+    return `${pbUpdate.label} 기록이 새로워졌어요 (${formatElapsedTime(pbUpdate.previousSeconds)} → ${formatElapsedTime(pbUpdate.seconds)})`;
   });
+  const distanceLabel = distanceHp === 40 ? '10km 이상' : distanceHp === 20 ? '5km 이상' : '3km 이상';
+  const hpBreakdown = [
+    { label: '러닝 완료', hp: 10 },
+    ...(distanceHp > 0 ? [{ label: distanceLabel, hp: distanceHp }] : []),
+    ...(pbBonusHp > 0 ? [{ label: 'PB 갱신 보너스', hp: pbBonusHp }] : [])
+  ];
 
   return {
     earnedHp: 10 + distanceHp + pbBonusHp,
     distanceHp,
     pbBonusHp,
+    hpBreakdown,
     pbUpdates,
     messages
   };
