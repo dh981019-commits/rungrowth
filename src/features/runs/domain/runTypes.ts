@@ -14,7 +14,7 @@ export type RunRecord = {
   endedAt: string;
   durationSeconds: number;
   distanceMeters: number;
-  averagePaceSecondsPerKm: number;
+  averagePaceSecondsPerKm: number | null;
   routeCoordinates: RunCoordinate[];
   note?: string;
 };
