@@ -11,12 +11,12 @@ import { colors } from '@/theme/colors';
 export default function ProgressScreen() {
   return (
     <ScrollView contentContainerStyle={commonStyles.screen}>
-      <ScreenHeader eyebrow="Progress" title="Your Week" />
+      <ScreenHeader eyebrow="성장" title="이번 주 요약" />
 
       <View style={commonStyles.heroCard}>
         <View style={commonStyles.rowBetween}>
           <View style={commonStyles.flex}>
-            <Text style={commonStyles.cardLabel}>Distance goal</Text>
+            <Text style={commonStyles.cardLabel}>거리 목표</Text>
             <Text style={commonStyles.cardTitle}>{progressSummary.weeklyGoal.label}</Text>
           </View>
           <View style={commonStyles.iconBadge}>
@@ -27,13 +27,13 @@ export default function ProgressScreen() {
       </View>
 
       <View style={commonStyles.statGrid}>
-        <StatPill label="Easy minutes" value={`${progressSummary.easyPaceMinutes}`} />
-        <StatPill label="Active days" value={`${progressSummary.activeDays}`} />
+        <StatPill label="편안한 러닝" value={`${progressSummary.easyPaceMinutes}분`} />
+        <StatPill label="러닝한 날" value={`${progressSummary.activeDays}일`} />
       </View>
 
       <View style={commonStyles.card}>
         <View style={commonStyles.rowBetween}>
-          <Text style={commonStyles.cardTitle}>Consistency</Text>
+          <Text style={commonStyles.cardTitle}>꾸준함</Text>
           <Text style={commonStyles.metric}>{Math.round(progressSummary.consistency * 100)}%</Text>
         </View>
         <ProgressBar progress={progressSummary.consistency} />
@@ -41,7 +41,7 @@ export default function ProgressScreen() {
       </View>
 
       <View style={commonStyles.card}>
-        <Text style={commonStyles.cardTitle}>Weekly runs</Text>
+        <Text style={commonStyles.cardTitle}>주간 요약</Text>
         {progressSummary.weeklyRuns.map((run) => (
           <View key={run.id} style={commonStyles.recordRow}>
             <View>
