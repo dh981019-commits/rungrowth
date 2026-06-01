@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { type Href, router } from 'expo-router';
 
 import { ProgressBar } from '@/components/ProgressBar';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -99,7 +100,7 @@ export default function HomeScreen() {
         <ProgressBar progress={homeSummary.weeklyGoal.current / homeSummary.weeklyGoal.goal} />
       </View>
 
-      <Pressable style={commonStyles.primaryButton}>
+      <Pressable style={commonStyles.primaryButton} onPress={() => router.push('/run' as Href)}>
         <Ionicons name="play" size={20} color="white" />
         <Text style={commonStyles.primaryButtonText}>달리기 시작</Text>
       </Pressable>
