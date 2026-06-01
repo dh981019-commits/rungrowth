@@ -1,0 +1,36 @@
+name: MVP CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    name: Verify MVP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Check MVP growth copy
+        run: rg -n "러닝 완료|개인 최고기록|획득 HP|보너스|다음 티어|브론즈 러너|실버 러너|Hi Point" app src
+
+      - name: Block unfinished placeholders
+        run: '! rg -n "TODO|FIXME|mock only|dummy" app src'
