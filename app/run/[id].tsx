@@ -9,6 +9,8 @@ import {
   formatElapsedTime,
   formatPace
 } from '@/features/runs/domain/runCalculations';
+import { calculateRunAchievement } from '@/features/runs/domain/runAchievements';
+import { buildRunStats } from '@/features/runs/domain/runStats';
 import { RunRecord } from '@/features/runs/domain/runTypes';
 import { runRepository } from '@/features/runs/data/runRepository';
 import { commonStyles } from '@/theme/commonStyles';
@@ -37,14 +39,16 @@ function getInitialRegion(run: RunRecord | null) {
 export default function RunDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [run, setRun] = useState<RunRecord | null>(null);
+  const [allRuns, setAllRuns] = useState<RunRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
 
-    runRepository.findById(id).then((nextRun) => {
+    Promise.all([runRepository.findById(id), runRepository.findAll()]).then(([nextRun, nextRuns]) => {
       if (isMounted) {
         setRun(nextRun);
+        setAllRuns(nextRuns);
         setIsLoading(false);
       }
     });
@@ -55,6 +59,23 @@ export default function RunDetailScreen() {
   }, [id]);
 
   const initialRegion = useMemo(() => getInitialRegion(run), [run]);
+  const runResult = useMemo(() => {
+    if (!run) {
+      return null;
+    }
+
+    const previousRuns = allRuns.filter(
+      (previousRun) =>
+        previousRun.id !== run.id &&
+        new Date(previousRun.endedAt).getTime() < new Date(run.endedAt).getTime()
+    );
+    const stats = buildRunStats(allRuns);
+
+    return {
+      achievement: calculateRunAchievement(run, previousRuns),
+      stats
+    };
+  }, [allRuns, run]);
 
   if (isLoading) {
     return (
@@ -111,6 +132,32 @@ export default function RunDetailScreen() {
           <Text style={commonStyles.cardLabel}>평균 페이스</Text>
           <Text style={styles.summaryValue}>{formatPace(run.averagePaceSecondsPerKm)}</Text>
         </View>
+      </View>
+
+      <View style={commonStyles.card}>
+        <View style={commonStyles.rowBetween}>
+          <View>
+            <Text style={commonStyles.cardLabel}>획득 HP</Text>
+            <Text style={commonStyles.cardTitle}>+{runResult?.achievement.earnedHp ?? 0} HP</Text>
+          </View>
+          <Text style={commonStyles.metric}>{runResult?.stats.currentTier ?? '브론즈 러너'}</Text>
+        </View>
+        <Text style={commonStyles.bodyText}>
+          {runResult?.stats.nextTierMessage ?? '다음 티어까지 성장 기록을 쌓아보세요'}
+        </Text>
+        {runResult?.achievement.pbUpdates.length ? (
+          <View>
+            <Text style={commonStyles.cardTitle}>개인 최고기록 갱신!</Text>
+            {runResult.achievement.messages.map((message) => (
+              <Text key={message} style={commonStyles.bodyText}>
+                {message}
+              </Text>
+            ))}
+            <Text style={commonStyles.metric}>+50 HP 보너스를 받았어요</Text>
+          </View>
+        ) : (
+          <Text style={commonStyles.bodyText}>이번 러닝도 성장 기록에 반영됐어요.</Text>
+        )}
       </View>
 
       <View style={commonStyles.card}>
