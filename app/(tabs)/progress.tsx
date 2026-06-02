@@ -31,7 +31,19 @@ export default function ProgressScreen() {
 
       <View style={commonStyles.statGrid}>
         <StatPill label="총 러닝" value={`${stats.totalRuns}회`} />
-        <StatPill label="누적 거리" value={stats.totalDistance} />
+        <StatPill label="연속 러닝" value={stats.streak.label} />
+      </View>
+
+      <View style={commonStyles.card}>
+        <View style={commonStyles.rowBetween}>
+          <Text style={commonStyles.cardTitle}>주간 목표</Text>
+          <Text style={commonStyles.metric}>{stats.weeklyGoal.message}</Text>
+        </View>
+        <Text style={commonStyles.bodyText}>{stats.weeklyGoal.runCountLabel}</Text>
+        <ProgressBar progress={stats.weeklyGoal.runProgress} />
+        <Text style={commonStyles.bodyText}>{stats.weeklyGoal.distanceLabel}</Text>
+        <ProgressBar progress={stats.weeklyGoal.distanceProgress} />
+        <Text style={commonStyles.supportingText}>{stats.streak.message}</Text>
       </View>
 
       <View style={commonStyles.card}>
