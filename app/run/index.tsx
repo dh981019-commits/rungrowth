@@ -46,6 +46,7 @@ export default function RunTrackingScreen() {
     averagePaceSecondsPerKm,
     routeCoordinates,
     errorMessage,
+    gpsSignalMessage,
     startRun,
     pauseRun,
     resumeRun,
@@ -110,6 +111,13 @@ export default function RunTrackingScreen() {
           </View>
         ) : null}
       </View>
+
+      {gpsSignalMessage ? (
+        <View style={styles.gpsNotice}>
+          <Ionicons name="warning-outline" size={18} color={colors.primaryDark} />
+          <Text style={styles.gpsNoticeText}>{gpsSignalMessage}</Text>
+        </View>
+      ) : null}
 
       <View style={styles.metricGrid}>
         <View style={styles.metricCard}>
@@ -199,6 +207,21 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     backgroundColor: colors.surface
+  },
+  gpsNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 8,
+    backgroundColor: colors.surfaceAlt
+  },
+  gpsNoticeText: {
+    flex: 1,
+    color: colors.primaryDark,
+    fontSize: 14,
+    fontWeight: '800'
   },
   metricGrid: {
     gap: 12
