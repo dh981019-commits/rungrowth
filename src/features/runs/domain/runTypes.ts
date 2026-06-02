@@ -5,6 +5,7 @@ export type RunCoordinate = {
   longitude: number;
   altitude?: number | null;
   accuracy?: number | null;
+  speed?: number | null;
   timestamp: string;
 };
 
