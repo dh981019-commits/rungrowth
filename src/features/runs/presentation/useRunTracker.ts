@@ -5,6 +5,7 @@ import {
   calculateAveragePace,
   calculateDistanceMeters
 } from '../domain/runCalculations';
+import { shouldAcceptLocationUpdate } from '../domain/runLocationFilter';
 import { RunCoordinate, RunStatus } from '../domain/runTypes';
 import { runRepository } from '../data/runRepository';
 
@@ -14,8 +15,17 @@ function toRunCoordinate(location: Location.LocationObject): RunCoordinate {
     longitude: location.coords.longitude,
     altitude: location.coords.altitude,
     accuracy: location.coords.accuracy,
+    speed: location.coords.speed,
     timestamp: new Date(location.timestamp).toISOString()
   };
+}
+
+function calculateElapsedSeconds(previousCoordinate: RunCoordinate, nextCoordinate: RunCoordinate) {
+  const previousTime = new Date(previousCoordinate.timestamp).getTime();
+  const nextTime = new Date(nextCoordinate.timestamp).getTime();
+  const elapsedSeconds = (nextTime - previousTime) / 1000;
+
+  return Number.isFinite(elapsedSeconds) && elapsedSeconds > 0 ? elapsedSeconds : null;
 }
 
 export function useRunTracker() {
@@ -26,8 +36,10 @@ export function useRunTracker() {
   const [distanceMeters, setDistanceMeters] = useState(0);
   const [routeCoordinates, setRouteCoordinates] = useState<RunCoordinate[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [gpsSignalMessage, setGpsSignalMessage] = useState<string | null>(null);
 
   const watchRef = useRef<Location.LocationSubscription | null>(null);
+  const gpsSignalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startedAtRef = useRef<Date | null>(null);
   const elapsedSecondsRef = useRef(0);
   const distanceMetersRef = useRef(0);
@@ -37,6 +49,19 @@ export function useRunTracker() {
   const stopWatching = useCallback(() => {
     watchRef.current?.remove();
     watchRef.current = null;
+  }, []);
+
+  const showGpsSignalMessage = useCallback(() => {
+    setGpsSignalMessage('GPS 신호가 불안정해 일부 위치를 제외했어요');
+
+    if (gpsSignalTimerRef.current) {
+      clearTimeout(gpsSignalTimerRef.current);
+    }
+
+    gpsSignalTimerRef.current = setTimeout(() => {
+      setGpsSignalMessage(null);
+      gpsSignalTimerRef.current = null;
+    }, 6000);
   }, []);
 
   const startWatching = useCallback(async () => {
@@ -51,11 +76,31 @@ export function useRunTracker() {
       (location) => {
         const nextCoordinate = toRunCoordinate(location);
         const previousCoordinate = routeCoordinatesRef.current.at(-1);
+        const movementDistance = previousCoordinate
+          ? calculateDistanceMeters(previousCoordinate, nextCoordinate)
+          : 0;
+        const elapsedSeconds = previousCoordinate
+          ? calculateElapsedSeconds(previousCoordinate, nextCoordinate)
+          : null;
+        const filterResult = shouldAcceptLocationUpdate({
+          previousCoordinate,
+          nextCoordinate,
+          distanceMeters: movementDistance,
+          elapsedSeconds,
+          accuracy: location.coords.accuracy,
+          speed: location.coords.speed
+        });
+
+        if (!filterResult.accepted) {
+          showGpsSignalMessage();
+          return;
+        }
+
         const nextRoute = [...routeCoordinatesRef.current, nextCoordinate];
         let nextDistance = distanceMetersRef.current;
 
         if (previousCoordinate) {
-          nextDistance += calculateDistanceMeters(previousCoordinate, nextCoordinate);
+          nextDistance += movementDistance;
         }
 
         routeCoordinatesRef.current = nextRoute;
@@ -64,7 +109,7 @@ export function useRunTracker() {
         setDistanceMeters(nextDistance);
       }
     );
-  }, [stopWatching]);
+  }, [showGpsSignalMessage, stopWatching]);
 
   const startRun = useCallback(async () => {
     setErrorMessage(null);
@@ -87,6 +132,7 @@ export function useRunTracker() {
     setDistanceMeters(0);
     setRouteCoordinates([]);
     setPermissionDenied(false);
+    setGpsSignalMessage(null);
     setStatus('running');
     await startWatching();
   }, [startWatching]);
@@ -161,7 +207,16 @@ export function useRunTracker() {
     return () => clearInterval(timer);
   }, [status]);
 
-  useEffect(() => stopWatching, [stopWatching]);
+  useEffect(
+    () => () => {
+      stopWatching();
+
+      if (gpsSignalTimerRef.current) {
+        clearTimeout(gpsSignalTimerRef.current);
+      }
+    },
+    [stopWatching]
+  );
 
   return {
     permissionDenied,
@@ -172,6 +227,7 @@ export function useRunTracker() {
     averagePaceSecondsPerKm: calculateAveragePace(elapsedSeconds, distanceMeters),
     routeCoordinates,
     errorMessage,
+    gpsSignalMessage,
     startRun,
     pauseRun,
     resumeRun,
