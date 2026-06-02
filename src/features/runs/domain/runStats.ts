@@ -5,8 +5,10 @@ import {
   calculatePersonalBests
 } from './runAchievements';
 import { formatDistance, formatElapsedTime, formatPace } from './runCalculations';
+import { calculateRunStreak } from './runStreak';
 import { getNextTierProgress } from './runTier';
 import { RunRecord } from './runTypes';
+import { calculateWeeklyGoal } from './runWeeklyGoal';
 
 export type RunStats = ReturnType<typeof buildRunStats>;
 
@@ -41,6 +43,8 @@ export function buildRunStats(runs: RunRecord[]) {
   const totalDistanceMeters = runs.reduce((sum, run) => sum + run.distanceMeters, 0);
   const latestRun = latestRuns[0] ?? null;
   const latestAchievement = latestRun ? achievementMap.get(latestRun.id) ?? null : null;
+  const weeklyGoal = calculateWeeklyGoal(runs);
+  const streak = calculateRunStreak(runs);
 
   const pbRows = PB_TARGETS.map((target) => {
     const personalBest = personalBests.get(target.key);
@@ -80,6 +84,8 @@ export function buildRunStats(runs: RunRecord[]) {
     bestPb: bestPb
       ? `${bestPb.label.replace(' PB', '')} ${bestPb.value}`
       : '첫 PB를 만들어보세요',
+    weeklyGoal,
+    streak,
     recentRuns: latestRuns.slice(0, 5).map((run) => {
       const achievement = achievementMap.get(run.id);
 
