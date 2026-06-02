@@ -39,6 +39,8 @@ export default function ProgressScreen() {
           <Text style={commonStyles.cardTitle}>주간 목표</Text>
           <Text style={commonStyles.metric}>{stats.weeklyGoal.message}</Text>
         </View>
+        <Text style={commonStyles.bodyText}>전체 진행률</Text>
+        <ProgressBar progress={stats.weeklyGoal.overallProgress} />
         <Text style={commonStyles.bodyText}>{stats.weeklyGoal.runCountLabel}</Text>
         <ProgressBar progress={stats.weeklyGoal.runProgress} />
         <Text style={commonStyles.bodyText}>{stats.weeklyGoal.distanceLabel}</Text>
