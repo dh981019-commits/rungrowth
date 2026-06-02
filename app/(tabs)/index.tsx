@@ -5,7 +5,6 @@ import { type Href, router } from 'expo-router';
 import { ProgressBar } from '@/components/ProgressBar';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { StatPill } from '@/components/StatPill';
-import { homeSummary } from '@/data/mockData';
 import { useRunStats } from '@/features/runs/presentation/useRunStats';
 import { commonStyles } from '@/theme/commonStyles';
 import { colors } from '@/theme/colors';
@@ -60,15 +59,28 @@ export default function HomeScreen() {
       </View>
 
       <View style={commonStyles.statGrid}>
-        <StatPill label="연속 러닝" value={stats.streak.label} />
+        <StatPill label="총 러닝" value={`${stats.totalRuns}회`} />
         <StatPill label="누적 거리" value={stats.totalDistance} />
       </View>
 
       <View style={commonStyles.card}>
         <View style={commonStyles.rowBetween}>
           <View style={commonStyles.flex}>
+            <Text style={commonStyles.cardLabel}>연속 러닝</Text>
+            <Text style={commonStyles.cardTitle}>{stats.streak.label}</Text>
+          </View>
+          <View style={commonStyles.iconBadge}>
+            <Ionicons name="flame" size={24} color={colors.primary} />
+          </View>
+        </View>
+        <Text style={commonStyles.bodyText}>{stats.streak.message}</Text>
+      </View>
+
+      <View style={commonStyles.card}>
+        <View style={commonStyles.rowBetween}>
+          <View style={commonStyles.flex}>
             <Text style={commonStyles.cardLabel}>오늘의 러닝</Text>
-            <Text style={commonStyles.cardTitle}>{homeSummary.dailyMission}</Text>
+            <Text style={commonStyles.cardTitle}>가볍게 리듬 만들기</Text>
           </View>
           <View style={commonStyles.iconBadge}>
             <Ionicons name="flash" size={24} color={colors.primary} />
@@ -81,12 +93,11 @@ export default function HomeScreen() {
 
       <View style={commonStyles.card}>
         <Text style={commonStyles.cardLabel}>추천 코스</Text>
-        <Text style={commonStyles.cardTitle}>{homeSummary.recommendedCourse.name}</Text>
+        <Text style={commonStyles.cardTitle}>가까운 평지 코스</Text>
         <View style={commonStyles.metricRow}>
-          <Text style={commonStyles.metric}>{homeSummary.recommendedCourse.distance}</Text>
-          <Text style={commonStyles.metric}>{homeSummary.recommendedCourse.difficulty}</Text>
-          <Text style={commonStyles.metric}>{homeSummary.recommendedCourse.elevation}</Text>
-          <Text style={commonStyles.metric}>{homeSummary.recommendedCourse.duration}</Text>
+          <Text style={commonStyles.metric}>3km 전후</Text>
+          <Text style={commonStyles.metric}>쉬움</Text>
+          <Text style={commonStyles.metric}>회복</Text>
         </View>
       </View>
 
