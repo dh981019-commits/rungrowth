@@ -29,10 +29,11 @@ export default function ProfileScreen() {
 
       <View style={commonStyles.statGrid}>
         <StatPill label="Hi Point" value={`${stats.totalHp} HP`} />
-        <StatPill label="총 러닝" value={`${stats.totalRuns}회`} />
+        <StatPill label="연속 러닝" value={stats.streak.label} />
       </View>
 
       <StatPill label="누적 거리" value={stats.totalDistance} />
+      <StatPill label="총 러닝" value={`${stats.totalRuns}회`} />
       <StatPill label="최고 PB" value={stats.bestPb} />
 
       <View style={commonStyles.card}>
