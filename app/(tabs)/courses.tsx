@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, router, useFocusEffect } from 'expo-router';
 import MapView, { Marker, Polyline } from 'react-native-maps';
@@ -41,60 +41,61 @@ function CoursePreview({ course }: { course: Course }) {
   const startCourseRun = () => router.push({ pathname: '/run', params: { courseId: course.id } });
 
   return (
-    <Pressable onPress={openDetail}>
-      <HiCard style={styles.courseCard}>
-        <View style={styles.rowBetween}>
-          <View style={styles.flex}>
-            <Text style={styles.cardTitle}>{course.name}</Text>
-            <Text style={styles.body}>{formatSavedDate(course.createdAt)} 저장</Text>
-          </View>
-          <View style={styles.mapBadge}>
-            <Ionicons name="map" size={22} color={hiTheme.colors.green} />
-          </View>
+    <HiCard style={styles.courseCard}>
+      <View style={styles.rowBetween}>
+        <View style={styles.flex}>
+          <Text style={styles.cardTitle}>{course.name}</Text>
+          <Text style={styles.body}>{formatSavedDate(course.createdAt)} 저장</Text>
         </View>
-
-        <View style={styles.previewMapWrap}>
-          <MapView
-            style={styles.previewMap}
-            initialRegion={getMapRegion(course.routeCoordinates)}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            rotateEnabled={false}
-            pitchEnabled={false}
-          >
-            {course.routeCoordinates.length > 0 ? (
-              <Marker coordinate={course.routeCoordinates[0]} title="시작" />
-            ) : null}
-            {course.routeCoordinates.length > 1 ? (
-              <>
-                <Polyline
-                  coordinates={course.routeCoordinates}
-                  strokeColor={hiTheme.colors.green}
-                  strokeWidth={5}
-                />
-                <Marker
-                  coordinate={course.routeCoordinates[course.routeCoordinates.length - 1]}
-                  title="종료"
-                />
-              </>
-            ) : null}
-          </MapView>
+        <View style={styles.mapBadge}>
+          <Ionicons name="map" size={22} color={hiTheme.colors.green} />
         </View>
+      </View>
 
-        <View style={styles.statGrid}>
-          <HiStatCard label="거리" value={formatDistance(course.distanceMeters)} />
-          <HiStatCard label="시간" value={formatElapsedTime(course.durationSeconds)} />
-          <HiStatCard label="평균 페이스" value={formatPace(course.averagePaceSecondsPerKm)} />
-        </View>
+      <View style={styles.previewMapWrap}>
+        <MapView
+          style={styles.previewMap}
+          initialRegion={getMapRegion(course.routeCoordinates)}
+          scrollEnabled={false}
+          zoomEnabled={false}
+          rotateEnabled={false}
+          pitchEnabled={false}
+        >
+          {course.routeCoordinates.length > 0 ? (
+            <Marker coordinate={course.routeCoordinates[0]} title="시작" />
+          ) : null}
+          {course.routeCoordinates.length > 1 ? (
+            <>
+              <Polyline
+                coordinates={course.routeCoordinates}
+                strokeColor={hiTheme.colors.green}
+                strokeWidth={5}
+              />
+              <Marker
+                coordinate={course.routeCoordinates[course.routeCoordinates.length - 1]}
+                title="종료"
+              />
+            </>
+          ) : null}
+        </MapView>
+      </View>
 
+      <View style={styles.statGrid}>
+        <HiStatCard label="거리" value={formatDistance(course.distanceMeters)} />
+        <HiStatCard label="시간" value={formatElapsedTime(course.durationSeconds)} />
+        <HiStatCard label="평균 페이스" value={formatPace(course.averagePaceSecondsPerKm)} />
+      </View>
+
+      <View style={styles.actionRow}>
+        <HiButton label="상세 보기" variant="ghost" onPress={openDetail} style={styles.courseButton} />
         <HiButton
           label="다시 달리기"
           variant="secondary"
           onPress={startCourseRun}
           style={styles.courseButton}
         />
-      </HiCard>
-    </Pressable>
+      </View>
+    </HiCard>
   );
 }
 
@@ -226,7 +227,12 @@ const styles = StyleSheet.create({
     gap: 10
   },
   courseButton: {
+    flex: 1,
     minHeight: 48
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10
   },
   empty: {
     alignItems: 'center'
