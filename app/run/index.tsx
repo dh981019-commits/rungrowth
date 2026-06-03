@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { type Href, router, useLocalSearchParams } from 'expo-router';
 
+import { HiButton } from '@/components/HiButton';
+import { HiCard } from '@/components/HiCard';
+import { HiCharacter } from '@/components/HiCharacter';
+import { HiStatCard } from '@/components/HiStatCard';
 import { localCourseRepository } from '@/features/courses/data/localCourseRepository';
 import { Course } from '@/features/courses/domain/courseTypes';
 import {
@@ -13,8 +17,7 @@ import {
 } from '@/features/runs/domain/runCalculations';
 import { RunCoordinate } from '@/features/runs/domain/runTypes';
 import { useRunTracker } from '@/features/runs/presentation/useRunTracker';
-import { commonStyles } from '@/theme/commonStyles';
-import { colors } from '@/theme/colors';
+import { hiTheme } from '@/theme/theme';
 
 const fallbackRegion = {
   latitude: 37.5665,
@@ -53,9 +56,12 @@ function getCourseMapRegion(course: Course | null) {
   };
 }
 
+function estimateCalories(distanceMeters: number) {
+  return Math.max(0, Math.round((distanceMeters / 1000) * 68));
+}
+
 export default function RunTrackingScreen() {
   const { courseId } = useLocalSearchParams<{ courseId?: string }>();
-  const [note, setNote] = useState('');
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [isCourseLoading, setIsCourseLoading] = useState(Boolean(courseId));
   const {
@@ -78,6 +84,8 @@ export default function RunTrackingScreen() {
     () => (routeCoordinates.length > 0 ? getMapRegion(routeCoordinates) : getCourseMapRegion(selectedCourse)),
     [routeCoordinates, selectedCourse]
   );
+  const calories = estimateCalories(distanceMeters);
+  const isSavingRun = status === 'saving';
 
   useEffect(() => {
     if (!courseId) {
@@ -108,7 +116,7 @@ export default function RunTrackingScreen() {
   }, [setErrorMessage, startRun]);
 
   const handleFinish = async () => {
-    const savedRun = await finishRun(note, selectedCourse?.id);
+    const savedRun = await finishRun(undefined, selectedCourse?.id);
 
     if (savedRun) {
       router.replace(`/run/${savedRun.id}` as Href);
@@ -118,185 +126,191 @@ export default function RunTrackingScreen() {
   if (permissionDenied) {
     return (
       <View style={styles.permissionScreen}>
-        <View style={commonStyles.iconBadge}>
-          <Ionicons name="location-outline" size={26} color={colors.primary} />
-        </View>
-        <Text style={commonStyles.cardTitle}>GPS 권한이 필요해요</Text>
-        <Text style={[commonStyles.bodyText, styles.centerText]}>
-          러닝 거리와 경로를 자동으로 기록하려면 위치 권한을 허용해 주세요.
-        </Text>
-        <Pressable style={commonStyles.primaryButton} onPress={startRun}>
-          <Ionicons name="refresh" size={20} color="white" />
-          <Text style={commonStyles.primaryButtonText}>권한 다시 요청</Text>
-        </Pressable>
+        <HiCharacter size="md" mood="sleep" />
+        <Text style={styles.title}>GPS 권한이 필요해요</Text>
+        <Text style={styles.body}>러닝 거리와 경로를 자동으로 기록하려면 위치 권한을 허용해 주세요.</Text>
+        <HiButton label="권한 다시 요청" onPress={startRun} />
       </View>
     );
   }
 
+  const isPaused = status === 'paused';
+
   return (
-    <ScrollView contentContainerStyle={commonStyles.screen}>
-      <View style={commonStyles.header}>
-        <Text style={commonStyles.eyebrow}>GPS 러닝 기록</Text>
-        <Text style={commonStyles.screenTitle}>
-          {selectedCourse ? `${selectedCourse.name} 러닝` : '러닝 중'}
-        </Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.screen}>
+        <View style={styles.topRow}>
+          <Text style={styles.gpsText}>
+            GPS <Ionicons name="cellular" size={16} color={hiTheme.colors.green} />
+          </Text>
+          <Pressable style={styles.iconButton}>
+            <Ionicons name="settings-outline" size={20} color={hiTheme.colors.text} />
+          </Pressable>
+        </View>
 
-      {courseId ? (
-        <View style={commonStyles.card}>
-          <View style={commonStyles.rowBetween}>
-            <View style={commonStyles.flex}>
-              <Text style={commonStyles.cardLabel}>선택한 코스</Text>
-              <Text style={commonStyles.cardTitle}>
-                {selectedCourse?.name ?? (isCourseLoading ? '코스를 불러오는 중이에요' : '코스를 찾지 못했어요')}
-              </Text>
-            </View>
-            <View style={commonStyles.iconBadge}>
-              <Ionicons name="map" size={24} color={colors.primary} />
-            </View>
-          </View>
-          {selectedCourse ? (
-            <>
-              <Text style={commonStyles.bodyText}>저장된 코스를 따라 달리는 중이에요</Text>
-              <View style={commonStyles.metricRow}>
-                <Text style={commonStyles.metric}>{formatDistance(selectedCourse.distanceMeters)}</Text>
-                <Text style={commonStyles.metric}>{formatElapsedTime(selectedCourse.durationSeconds)}</Text>
-                <Text style={commonStyles.metric}>{formatPace(selectedCourse.averagePaceSecondsPerKm)}</Text>
-              </View>
-            </>
-          ) : (
-            <Text style={commonStyles.bodyText}>
-              저장된 코스를 불러오지 못해 일반 러닝으로 기록해요.
+        {courseId ? (
+          <HiCard tone={selectedCourse ? 'green' : 'default'} style={styles.courseCard}>
+            <Text style={styles.label}>선택한 코스</Text>
+            <Text style={styles.cardTitle}>
+              {selectedCourse?.name ?? (isCourseLoading ? '코스를 불러오는 중이에요' : '코스를 찾지 못했어요')}
             </Text>
-          )}
-        </View>
-      ) : null}
+            <Text style={styles.body}>
+              {selectedCourse
+                ? '저장된 코스를 따라 달리는 중이에요'
+                : '저장된 코스를 불러오지 못해 일반 러닝으로 기록해요.'}
+            </Text>
+          </HiCard>
+        ) : null}
 
-      <View style={styles.mapWrap}>
-        <MapView style={styles.map} region={mapRegion} showsUserLocation>
-          {selectedCourse?.routeCoordinates.length ? (
-            <Marker coordinate={selectedCourse.routeCoordinates[0]} title="코스 시작" />
+        <View style={styles.timerBlock}>
+          <Text style={styles.modeText}>{isPaused ? '일시정지' : '러닝 중'}</Text>
+          <Text style={styles.timer}>{formatElapsedTime(elapsedSeconds)}</Text>
+        </View>
+
+        <View style={styles.statsGrid}>
+          <HiStatCard label="거리(km)" value={formatDistance(distanceMeters).replace(' km', '')} />
+          <HiStatCard label="평균 페이스" value={formatPace(averagePaceSecondsPerKm)} />
+          <HiStatCard label="칼로리(kcal)" value={`${calories}`} />
+        </View>
+
+        <View style={styles.mapWrap}>
+          <MapView style={styles.map} region={mapRegion} showsUserLocation>
+            {selectedCourse?.routeCoordinates.length ? (
+              <Marker coordinate={selectedCourse.routeCoordinates[0]} title="코스 시작" />
+            ) : null}
+            {selectedCourse && selectedCourse.routeCoordinates.length > 1 ? (
+              <>
+                <Polyline
+                  coordinates={selectedCourse.routeCoordinates}
+                  strokeColor="#9aa3a0"
+                  strokeWidth={4}
+                />
+                <Marker
+                  coordinate={selectedCourse.routeCoordinates[selectedCourse.routeCoordinates.length - 1]}
+                  title="코스 종료"
+                />
+              </>
+            ) : null}
+            {routeCoordinates.length > 0 ? (
+              <Marker coordinate={routeCoordinates[routeCoordinates.length - 1]} title="현재 위치" />
+            ) : null}
+            {routeCoordinates.length > 1 ? (
+              <Polyline coordinates={routeCoordinates} strokeColor={hiTheme.colors.green} strokeWidth={5} />
+            ) : null}
+          </MapView>
+          {routeCoordinates.length === 0 ? (
+            <View style={styles.mapHint}>
+              <ActivityIndicator color={hiTheme.colors.green} />
+              <Text style={styles.helper}>GPS 신호를 찾는 중이에요</Text>
+            </View>
           ) : null}
-          {selectedCourse && selectedCourse.routeCoordinates.length > 1 ? (
-            <>
-              <Polyline
-                coordinates={selectedCourse.routeCoordinates}
-                strokeColor={colors.muted}
-                strokeWidth={4}
-              />
-              <Marker
-                coordinate={selectedCourse.routeCoordinates[selectedCourse.routeCoordinates.length - 1]}
-                title="코스 종료"
-              />
-            </>
-          ) : null}
-          {routeCoordinates.length > 0 ? (
-            <Marker coordinate={routeCoordinates[routeCoordinates.length - 1]} title="현재 위치" />
-          ) : null}
-          {routeCoordinates.length > 1 ? (
-            <Polyline coordinates={routeCoordinates} strokeColor={colors.primary} strokeWidth={5} />
-          ) : null}
-        </MapView>
-        {routeCoordinates.length === 0 ? (
-          <View style={styles.mapHint}>
-            <ActivityIndicator color={colors.primary} />
-            <Text style={commonStyles.supportingText}>GPS 신호를 찾는 중이에요</Text>
+        </View>
+
+        {gpsSignalMessage ? (
+          <View style={styles.notice}>
+            <Ionicons name="warning-outline" size={18} color={hiTheme.colors.greenDark} />
+            <Text style={styles.noticeText}>{gpsSignalMessage}</Text>
           </View>
         ) : null}
-        {selectedCourse ? (
-          <View style={styles.mapLegend}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendLine, styles.savedCourseLine]} />
-              <Text style={styles.legendText}>회색: 저장 코스</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendLine, styles.currentRunLine]} />
-              <Text style={styles.legendText}>기본색: 현재 러닝</Text>
-            </View>
-          </View>
-        ) : null}
-      </View>
 
-      {gpsSignalMessage ? (
-        <View style={styles.gpsNotice}>
-          <Ionicons name="warning-outline" size={18} color={colors.primaryDark} />
-          <Text style={styles.gpsNoticeText}>{gpsSignalMessage}</Text>
-        </View>
-      ) : null}
+        {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
-      <View style={styles.metricGrid}>
-        <View style={styles.metricCard}>
-          <Text style={commonStyles.cardLabel}>현재 거리</Text>
-          <Text style={styles.metricValue}>{formatDistance(distanceMeters)}</Text>
-        </View>
-        <View style={styles.metricCard}>
-          <Text style={commonStyles.cardLabel}>경과 시간</Text>
-          <Text style={styles.metricValue}>{formatElapsedTime(elapsedSeconds)}</Text>
-        </View>
-        <View style={styles.metricCard}>
-          <Text style={commonStyles.cardLabel}>평균 페이스</Text>
-          <Text style={styles.metricValue}>{formatPace(averagePaceSecondsPerKm)}</Text>
-        </View>
-      </View>
-
-      <View style={commonStyles.card}>
-        <Text style={commonStyles.cardLabel}>메모 선택</Text>
-        <TextInput
-          style={styles.noteInput}
-          value={note}
-          onChangeText={setNote}
-          placeholder="오늘 러닝 느낌을 남겨도 좋아요"
-          placeholderTextColor={colors.muted}
-          multiline
-        />
-      </View>
-
-      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-
-      <View style={styles.buttonRow}>
-        {status === 'paused' ? (
-          <Pressable style={styles.secondaryButton} onPress={resumeRun}>
-            <Ionicons name="play" size={20} color={colors.primaryDark} />
-            <Text style={styles.secondaryButtonText}>재개</Text>
-          </Pressable>
+        {isPaused ? (
+          <HiCard style={styles.pausePanel}>
+            <HiCharacter size="sm" mood="sleep" />
+            <Text style={styles.cardTitle}>잠깐 쉬어가요</Text>
+            <HiButton label="계속하기" onPress={resumeRun} />
+            <HiButton label="종료하기" variant="danger" onPress={handleFinish} disabled={isSavingRun} />
+            <HiButton label="홈으로" variant="ghost" onPress={() => router.replace('/' as Href)} />
+          </HiCard>
         ) : (
-          <Pressable style={styles.secondaryButton} onPress={pauseRun}>
-            <Ionicons name="pause" size={20} color={colors.primaryDark} />
-            <Text style={styles.secondaryButtonText}>일시정지</Text>
-          </Pressable>
+          <View style={styles.controlRow}>
+            <Pressable style={styles.sideButton}>
+              <Ionicons name="camera" size={22} color={hiTheme.colors.text} />
+            </Pressable>
+            <Pressable style={styles.pauseButton} onPress={pauseRun}>
+              <Ionicons name="pause" size={32} color="#ffffff" />
+            </Pressable>
+            <Pressable style={styles.sideButton} onPress={handleFinish} disabled={status === 'saving'}>
+              <Ionicons name="stop" size={22} color={hiTheme.colors.text} />
+            </Pressable>
+          </View>
         )}
-        <Pressable
-          style={[commonStyles.primaryButton, styles.finishButton]}
-          onPress={handleFinish}
-          disabled={status === 'saving'}
-        >
-          <Ionicons name="stop" size={20} color="white" />
-          <Text style={commonStyles.primaryButtonText}>{status === 'saving' ? '저장 중' : '종료'}</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: hiTheme.colors.background
+  },
+  screen: {
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 44,
+    backgroundColor: hiTheme.colors.background
+  },
   permissionScreen: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
     paddingHorizontal: 24,
-    backgroundColor: colors.background
+    backgroundColor: hiTheme.colors.background
   },
-  centerText: {
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  gpsText: {
+    color: hiTheme.colors.text,
+    fontSize: 14,
+    fontWeight: '900'
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    backgroundColor: hiTheme.colors.surfaceSoft
+  },
+  title: {
+    color: hiTheme.colors.text,
+    fontSize: 24,
+    fontWeight: '900',
     textAlign: 'center'
   },
+  modeText: {
+    color: hiTheme.colors.text,
+    fontSize: 15,
+    fontWeight: '800',
+    textAlign: 'center'
+  },
+  timerBlock: {
+    gap: 2,
+    alignItems: 'center'
+  },
+  timer: {
+    color: hiTheme.colors.text,
+    fontSize: 52,
+    fontWeight: '900'
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    gap: 10
+  },
   mapWrap: {
-    height: 320,
+    height: 300,
     overflow: 'hidden',
-    borderRadius: 8,
+    borderRadius: hiTheme.radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt
+    borderColor: hiTheme.colors.border,
+    backgroundColor: hiTheme.colors.surfaceSoft
   },
   map: {
     flex: 1
@@ -310,106 +324,80 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: colors.surface
+    borderRadius: hiTheme.radius.md,
+    backgroundColor: hiTheme.colors.surface
   },
-  mapLegend: {
-    position: 'absolute',
-    left: 12,
-    right: 12,
-    bottom: 12,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: colors.surface
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6
-  },
-  legendLine: {
-    width: 22,
-    height: 4,
-    borderRadius: 8
-  },
-  savedCourseLine: {
-    backgroundColor: colors.muted
-  },
-  currentRunLine: {
-    backgroundColor: colors.primary
-  },
-  legendText: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: '800'
-  },
-  gpsNotice: {
+  notice: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: colors.surfaceAlt
+    borderRadius: hiTheme.radius.md,
+    backgroundColor: hiTheme.colors.greenSoft
   },
-  gpsNoticeText: {
+  noticeText: {
     flex: 1,
-    color: colors.primaryDark,
+    color: hiTheme.colors.greenDark,
     fontSize: 14,
     fontWeight: '800'
   },
-  metricGrid: {
-    gap: 12
-  },
-  metricCard: {
-    gap: 4,
-    padding: 18,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface
-  },
-  metricValue: {
-    color: colors.text,
-    fontSize: 28,
+  label: {
+    color: hiTheme.colors.muted,
+    fontSize: 12,
     fontWeight: '900'
   },
-  noteInput: {
-    minHeight: 82,
-    color: colors.text,
-    fontSize: 16,
-    lineHeight: 22,
-    textAlignVertical: 'top'
+  cardTitle: {
+    color: hiTheme.colors.text,
+    fontSize: 20,
+    fontWeight: '900',
+    textAlign: 'center'
+  },
+  body: {
+    color: hiTheme.colors.muted,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center'
+  },
+  helper: {
+    color: hiTheme.colors.muted,
+    fontSize: 13,
+    fontWeight: '800'
   },
   errorText: {
-    color: '#b91c1c',
+    color: hiTheme.colors.red,
     fontSize: 14,
     fontWeight: '800'
   },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12
-  },
-  secondaryButton: {
-    minHeight: 58,
-    flex: 1,
+  controlRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    borderRadius: 8,
-    backgroundColor: colors.surfaceAlt
+    gap: 24,
+    paddingTop: 4
   },
-  secondaryButtonText: {
-    color: colors.primaryDark,
-    fontSize: 16,
-    fontWeight: '900'
+  sideButton: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: hiTheme.radius.pill,
+    borderWidth: 1,
+    borderColor: hiTheme.colors.border,
+    backgroundColor: hiTheme.colors.surface
   },
-  finishButton: {
-    flex: 1
+  pauseButton: {
+    width: 72,
+    height: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: hiTheme.radius.pill,
+    backgroundColor: hiTheme.colors.green
+  },
+  pausePanel: {
+    alignItems: 'center'
+  },
+  courseCard: {
+    paddingVertical: 12
   }
 });
