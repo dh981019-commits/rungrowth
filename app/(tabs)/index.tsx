@@ -79,6 +79,25 @@ export default function HomeScreen() {
       <View style={commonStyles.card}>
         <View style={commonStyles.rowBetween}>
           <View style={commonStyles.flex}>
+            <Text style={commonStyles.cardLabel}>최근 획득 배지</Text>
+            <Text style={commonStyles.cardTitle}>
+              {stats.recentBadge ? stats.recentBadge.title : '아직 달성 전'}
+            </Text>
+          </View>
+          <View style={commonStyles.iconBadge}>
+            <Ionicons name="trophy" size={24} color={colors.primary} />
+          </View>
+        </View>
+        <Text style={commonStyles.bodyText}>
+          {stats.recentBadge
+            ? stats.recentBadge.description
+            : '첫 러닝을 완료하면 첫 배지를 받을 수 있어요'}
+        </Text>
+      </View>
+
+      <View style={commonStyles.card}>
+        <View style={commonStyles.rowBetween}>
+          <View style={commonStyles.flex}>
             <Text style={commonStyles.cardLabel}>오늘의 러닝</Text>
             <Text style={commonStyles.cardTitle}>가볍게 리듬 만들기</Text>
           </View>
