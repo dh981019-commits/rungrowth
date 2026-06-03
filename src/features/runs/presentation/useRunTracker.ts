@@ -158,7 +158,7 @@ export function useRunTracker() {
   }, [startWatching, status]);
 
   const finishRun = useCallback(
-    async (note?: string) => {
+    async (note?: string, sourceCourseId?: string) => {
       if (!startedAtRef.current || status === 'saving') {
         return null;
       }
@@ -177,6 +177,7 @@ export function useRunTracker() {
         distanceMeters: distance,
         averagePaceSecondsPerKm: calculateAveragePace(durationSeconds, distance),
         routeCoordinates: routeCoordinatesRef.current,
+        sourceCourseId: sourceCourseId || undefined,
         note: note?.trim() || undefined
       });
 
