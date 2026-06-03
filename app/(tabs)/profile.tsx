@@ -47,7 +47,7 @@ export default function ProfileScreen() {
       </View>
 
       <View style={commonStyles.card}>
-        <Text style={commonStyles.cardTitle}>배지</Text>
+        <Text style={commonStyles.cardTitle}>전체 배지</Text>
         {stats.badges.map((badge) => (
           <View key={badge.key} style={commonStyles.recordRow}>
             <View style={commonStyles.flex}>
