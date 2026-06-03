@@ -28,6 +28,10 @@ async function writeCourses(courses: Course[]) {
 
 export const localCourseRepository = {
   async save(courseInput: CourseInput) {
+    if (courseInput.routeCoordinates.length < 2) {
+      throw new Error('경로 좌표가 부족해 코스로 저장할 수 없어요.');
+    }
+
     const courses = await readCourses();
     const existingCourse = courses.find(
       (course) => course.sourceRunId === courseInput.sourceRunId
