@@ -48,7 +48,7 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
   {
     key: 'first-run',
     title: '첫 러닝 완료',
-    description: 'Runner’s Hi의 첫 러닝을 기록했어요',
+    description: "Runner's Hi의 첫 러닝을 기록했어요",
     getAchievedAt: (runs) => sortRunsByEndTime(runs)[0]?.endedAt ?? null
   },
   {
