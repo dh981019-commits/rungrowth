@@ -45,6 +45,19 @@ export default function ProfileScreen() {
           </View>
         ))}
       </View>
+
+      <View style={commonStyles.card}>
+        <Text style={commonStyles.cardTitle}>배지</Text>
+        {stats.badges.map((badge) => (
+          <View key={badge.key} style={commonStyles.recordRow}>
+            <View style={commonStyles.flex}>
+              <Text style={commonStyles.bodyText}>{badge.title}</Text>
+              <Text style={commonStyles.supportingText}>{badge.description}</Text>
+            </View>
+            <Text style={commonStyles.recordValue}>{badge.statusText}</Text>
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }
