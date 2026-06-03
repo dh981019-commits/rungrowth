@@ -76,9 +76,6 @@ export default function HomeScreen() {
           <Text style={styles.greeting}>러너님,</Text>
           <Text style={styles.title}>오늘도 달릴 좋은 날이에요</Text>
         </View>
-        <View style={styles.bell}>
-          <Ionicons name="notifications-outline" size={20} color={hiTheme.colors.text} />
-        </View>
       </View>
 
       {hasActiveRun ? (
@@ -248,16 +245,6 @@ const styles = StyleSheet.create({
     color: hiTheme.colors.text,
     fontSize: 24,
     fontWeight: '900'
-  },
-  bell: {
-    width: 42,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: hiTheme.radius.md,
-    borderWidth: 1,
-    borderColor: hiTheme.colors.border,
-    backgroundColor: hiTheme.colors.surface
   },
   ctaCard: {
     flexDirection: 'row',
