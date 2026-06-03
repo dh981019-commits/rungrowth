@@ -1,10 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
 import { ProgressBar } from '@/components/ProgressBar';
+import { localCourseRepository } from '@/features/courses/data/localCourseRepository';
 import {
   formatDistance,
   formatElapsedTime,
@@ -42,6 +51,10 @@ export default function RunDetailScreen() {
   const [run, setRun] = useState<RunRecord | null>(null);
   const [allRuns, setAllRuns] = useState<RunRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [courseName, setCourseName] = useState('내 러닝 코스');
+  const [isCourseNameVisible, setIsCourseNameVisible] = useState(false);
+  const [isCourseSaved, setIsCourseSaved] = useState(false);
+  const [isSavingCourse, setIsSavingCourse] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -58,6 +71,24 @@ export default function RunDetailScreen() {
       isMounted = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!run) {
+      return;
+    }
+
+    let isMounted = true;
+
+    localCourseRepository.existsBySourceRunId(run.id).then((exists) => {
+      if (isMounted) {
+        setIsCourseSaved(exists);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [run]);
 
   const initialRegion = useMemo(() => getInitialRegion(run), [run]);
   const runResult = useMemo(() => {
@@ -77,6 +108,31 @@ export default function RunDetailScreen() {
       stats
     };
   }, [allRuns, run]);
+
+  const handleSaveCourse = async () => {
+    if (!run || isCourseSaved || isSavingCourse) {
+      return;
+    }
+
+    if (!isCourseNameVisible) {
+      setIsCourseNameVisible(true);
+      return;
+    }
+
+    setIsSavingCourse(true);
+
+    await localCourseRepository.save({
+      name: courseName.trim() || '내 러닝 코스',
+      distanceMeters: run.distanceMeters,
+      durationSeconds: run.durationSeconds,
+      averagePaceSecondsPerKm: run.averagePaceSecondsPerKm,
+      routeCoordinates: run.routeCoordinates,
+      sourceRunId: run.id
+    });
+
+    setIsCourseSaved(true);
+    setIsSavingCourse(false);
+  };
 
   if (isLoading) {
     return (
@@ -211,6 +267,45 @@ export default function RunDetailScreen() {
       </View>
 
       <View style={commonStyles.card}>
+        <View style={commonStyles.rowBetween}>
+          <View style={commonStyles.flex}>
+            <Text style={commonStyles.cardLabel}>코스 저장</Text>
+            <Text style={commonStyles.cardTitle}>
+              {isCourseSaved ? '저장된 코스' : '이 경로를 코스로 저장'}
+            </Text>
+          </View>
+          <View style={commonStyles.iconBadge}>
+            <Ionicons name="map" size={24} color={colors.primary} />
+          </View>
+        </View>
+        <Text style={commonStyles.bodyText}>
+          마음에 드는 러닝 경로를 저장해두고 코스 탭에서 다시 확인할 수 있어요.
+        </Text>
+        {isCourseNameVisible && !isCourseSaved ? (
+          <TextInput
+            style={styles.courseNameInput}
+            value={courseName}
+            onChangeText={setCourseName}
+            placeholder="내 러닝 코스"
+            placeholderTextColor={colors.muted}
+          />
+        ) : null}
+        <Pressable
+          style={[
+            commonStyles.primaryButton,
+            (isCourseSaved || isSavingCourse) && styles.disabledButton
+          ]}
+          onPress={handleSaveCourse}
+          disabled={isCourseSaved || isSavingCourse}
+        >
+          <Ionicons name={isCourseSaved ? 'checkmark' : 'bookmark'} size={20} color="white" />
+          <Text style={commonStyles.primaryButtonText}>
+            {isCourseSaved ? '저장된 코스' : isSavingCourse ? '저장 중' : '이 경로를 코스로 저장'}
+          </Text>
+        </Pressable>
+      </View>
+
+      <View style={commonStyles.card}>
         <View style={commonStyles.recordRow}>
           <Text style={commonStyles.bodyText}>시작 시간</Text>
           <Text style={commonStyles.recordValue}>{formatDateTime(run.startedAt)}</Text>
@@ -293,5 +388,19 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 28,
     fontWeight: '900'
+  },
+  courseNameInput: {
+    minHeight: 48,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '800',
+    backgroundColor: colors.surfaceAlt
+  },
+  disabledButton: {
+    opacity: 0.6
   }
 });
