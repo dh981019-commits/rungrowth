@@ -52,3 +52,18 @@ npm run android
 npm run web
 npx tsc --noEmit
 ```
+
+## Supabase 준비
+
+현재 앱은 AsyncStorage로 러닝 기록을 저장합니다. Supabase 연동은 아직 활성화하지 않았고, 환경변수와 클라이언트 레이어만 준비되어 있습니다.
+
+1. Supabase 프로젝트를 생성합니다.
+2. `.env.example`을 참고해 로컬 `.env`를 만듭니다.
+3. 아래 값을 Supabase 프로젝트 설정에서 복사해 입력합니다.
+
+```sh
+EXPO_PUBLIC_SUPABASE_URL=
+EXPO_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+실제 키는 커밋하지 마세요. 테이블 초안은 `docs/supabase-schema.md`를 참고하세요.
