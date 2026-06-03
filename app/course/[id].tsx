@@ -137,7 +137,17 @@ export default function CourseDetailScreen() {
         </View>
       </View>
 
-      <Pressable style={commonStyles.primaryButton} onPress={() => router.push('/run' as Href)}>
+      <Pressable
+        style={commonStyles.primaryButton}
+        onPress={() =>
+          router.push({
+            pathname: '/run',
+            params: {
+              courseId: course.id
+            }
+          } as Href)
+        }
+      >
         <Ionicons name="play" size={20} color="white" />
         <Text style={commonStyles.primaryButtonText}>이 코스로 달리기</Text>
       </Pressable>
