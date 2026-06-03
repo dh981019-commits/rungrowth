@@ -55,6 +55,7 @@ export default function RunDetailScreen() {
   const [isCourseNameVisible, setIsCourseNameVisible] = useState(false);
   const [isCourseSaved, setIsCourseSaved] = useState(false);
   const [isSavingCourse, setIsSavingCourse] = useState(false);
+  const [courseSaveMessage, setCourseSaveMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -114,24 +115,37 @@ export default function RunDetailScreen() {
       return;
     }
 
+    if (run.routeCoordinates.length < 2) {
+      setCourseSaveMessage('경로가 충분히 기록된 러닝만 코스로 저장할 수 있어요.');
+      return;
+    }
+
     if (!isCourseNameVisible) {
       setIsCourseNameVisible(true);
+      setCourseSaveMessage('코스 이름을 확인한 뒤 한 번 더 저장해 주세요.');
       return;
     }
 
     setIsSavingCourse(true);
+    setCourseSaveMessage(null);
 
-    await localCourseRepository.save({
-      name: courseName.trim() || '내 러닝 코스',
-      distanceMeters: run.distanceMeters,
-      durationSeconds: run.durationSeconds,
-      averagePaceSecondsPerKm: run.averagePaceSecondsPerKm,
-      routeCoordinates: run.routeCoordinates,
-      sourceRunId: run.id
-    });
+    try {
+      await localCourseRepository.save({
+        name: courseName.trim() || '내 러닝 코스',
+        distanceMeters: run.distanceMeters,
+        durationSeconds: run.durationSeconds,
+        averagePaceSecondsPerKm: run.averagePaceSecondsPerKm,
+        routeCoordinates: run.routeCoordinates,
+        sourceRunId: run.id
+      });
 
-    setIsCourseSaved(true);
-    setIsSavingCourse(false);
+      setIsCourseSaved(true);
+      setCourseSaveMessage('코스로 저장했어요. 코스 탭에서 다시 볼 수 있어요.');
+    } catch {
+      setCourseSaveMessage('코스를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setIsSavingCourse(false);
+    }
   };
 
   if (isLoading) {
@@ -151,6 +165,9 @@ export default function RunDetailScreen() {
       </View>
     );
   }
+
+  const canSaveCourse = run.routeCoordinates.length >= 2;
+  const isCourseSaveDisabled = isCourseSaved || isSavingCourse || !canSaveCourse;
 
   return (
     <ScrollView contentContainerStyle={commonStyles.screen}>
@@ -279,24 +296,35 @@ export default function RunDetailScreen() {
           </View>
         </View>
         <Text style={commonStyles.bodyText}>
-          마음에 드는 러닝 경로를 저장해두고 코스 탭에서 다시 확인할 수 있어요.
+          {canSaveCourse
+            ? '마음에 드는 러닝 경로를 저장해두고 코스 탭에서 다시 확인할 수 있어요.'
+            : '지도 경로가 충분히 기록되지 않아 코스로 저장할 수 없어요.'}
         </Text>
         {isCourseNameVisible && !isCourseSaved ? (
-          <TextInput
-            style={styles.courseNameInput}
-            value={courseName}
-            onChangeText={setCourseName}
-            placeholder="내 러닝 코스"
-            placeholderTextColor={colors.muted}
-          />
+          <View style={styles.courseNameField}>
+            <Text style={commonStyles.cardLabel}>코스 이름</Text>
+            <TextInput
+              style={styles.courseNameInput}
+              value={courseName}
+              onChangeText={setCourseName}
+              placeholder="내 러닝 코스"
+              placeholderTextColor={colors.muted}
+              editable={!isSavingCourse}
+            />
+          </View>
+        ) : null}
+        {courseSaveMessage ? (
+          <Text style={isCourseSaved ? styles.successText : styles.courseSaveMessage}>
+            {courseSaveMessage}
+          </Text>
         ) : null}
         <Pressable
           style={[
             commonStyles.primaryButton,
-            (isCourseSaved || isSavingCourse) && styles.disabledButton
+            isCourseSaveDisabled && styles.disabledButton
           ]}
           onPress={handleSaveCourse}
-          disabled={isCourseSaved || isSavingCourse}
+          disabled={isCourseSaveDisabled}
         >
           <Ionicons name={isCourseSaved ? 'checkmark' : 'bookmark'} size={20} color="white" />
           <Text style={commonStyles.primaryButtonText}>
@@ -389,6 +417,9 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '900'
   },
+  courseNameField: {
+    gap: 8
+  },
   courseNameInput: {
     minHeight: 48,
     paddingHorizontal: 14,
@@ -399,6 +430,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     backgroundColor: colors.surfaceAlt
+  },
+  courseSaveMessage: {
+    color: colors.muted,
+    fontSize: 14,
+    fontWeight: '800'
+  },
+  successText: {
+    color: colors.primaryDark,
+    fontSize: 14,
+    fontWeight: '900'
   },
   disabledButton: {
     opacity: 0.6
