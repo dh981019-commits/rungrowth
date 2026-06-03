@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, router, useFocusEffect } from 'expo-router';
 
@@ -10,15 +10,25 @@ import { HiProgressBar } from '@/components/HiProgressBar';
 import { HiStatCard } from '@/components/HiStatCard';
 import { localCourseRepository } from '@/features/courses/data/localCourseRepository';
 import { Course } from '@/features/courses/domain/courseTypes';
-import { formatDistance, formatPace } from '@/features/runs/domain/runCalculations';
+import { formatDistance, formatElapsedTime, formatPace } from '@/features/runs/domain/runCalculations';
 import { useRunStats } from '@/features/runs/presentation/useRunStats';
+import { useRunTracker } from '@/features/runs/presentation/useRunTracker';
 import { hiTheme } from '@/theme/theme';
 
 export default function HomeScreen() {
   const { stats } = useRunStats();
+  const {
+    status,
+    elapsedSeconds,
+    distanceMeters,
+    averagePaceSecondsPerKm,
+    routeCoordinates,
+    finishRun
+  } = useRunTracker();
   const [recentCourses, setRecentCourses] = useState<Course[]>([]);
   const recentRun = stats.recentRuns[0] ?? null;
   const recentBadges = stats.badges.filter((badge) => badge.achieved).slice(0, 3);
+  const hasActiveRun = status === 'running' || status === 'paused';
 
   useFocusEffect(
     useCallback(() => {
@@ -35,6 +45,30 @@ export default function HomeScreen() {
       };
     }, [])
   );
+
+  const goToRunScreen = () => {
+    router.push('/run' as Href);
+  };
+
+  const confirmFinishRun = () => {
+    Alert.alert('러닝을 종료할까요?', '현재까지 기록된 러닝을 저장하고 결과 화면으로 이동해요.', [
+      {
+        text: '취소',
+        style: 'cancel'
+      },
+      {
+        text: '종료하기',
+        style: 'destructive',
+        onPress: async () => {
+          const savedRun = await finishRun();
+
+          if (savedRun) {
+            router.push(`/run/${savedRun.id}` as Href);
+          }
+        }
+      }
+    ]);
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -53,13 +87,43 @@ export default function HomeScreen() {
           <Text style={styles.kicker}>{"Runner's Hi"}</Text>
           <Text style={styles.ctaTitle}>지금 바로 기록을 시작해요</Text>
           <HiButton
-            label="달리기 시작"
-            onPress={() => router.push('/run' as Href)}
+            label={hasActiveRun ? '진행 중인 러닝 보기' : '달리기 시작'}
+            onPress={goToRunScreen}
             style={styles.ctaButton}
           />
         </View>
         <HiCharacter size="sm" mood="run" />
       </HiCard>
+
+      {hasActiveRun ? (
+        <HiCard tone="blue" style={styles.ongoingCard}>
+          <View style={styles.rowBetween}>
+            <View>
+              <Text style={styles.label}>진행 중인 러닝</Text>
+              <Text style={styles.cardTitle}>{status === 'paused' ? '일시정지' : '러닝 중'}</Text>
+            </View>
+            <Ionicons
+              name={status === 'paused' ? 'pause-circle' : 'radio-button-on'}
+              size={26}
+              color={hiTheme.colors.blue}
+            />
+          </View>
+          <View style={styles.statRow}>
+            <HiStatCard label="경과 시간" value={formatElapsedTime(elapsedSeconds)} />
+            <HiStatCard label="거리" value={formatDistance(distanceMeters)} />
+            <HiStatCard label="평균 페이스" value={formatPace(averagePaceSecondsPerKm)} />
+          </View>
+          {routeCoordinates.length > 0 ? (
+            <Text style={styles.helper}>경로 좌표 {routeCoordinates.length}개가 유지되고 있어요</Text>
+          ) : (
+            <Text style={styles.helper}>GPS 신호를 기다리는 중이에요</Text>
+          )}
+          <View style={styles.ongoingActions}>
+            <HiButton label="계속 보기" variant="secondary" onPress={goToRunScreen} style={styles.actionButton} />
+            <HiButton label="러닝 종료" variant="danger" onPress={confirmFinishRun} style={styles.actionButton} />
+          </View>
+        </HiCard>
+      ) : null}
 
       <HiCard style={styles.compactCard}>
         <View style={styles.rowBetween}>
@@ -78,11 +142,16 @@ export default function HomeScreen() {
                 </View>
                 <Pressable
                   style={styles.smallButton}
-                  onPress={() =>
-                    router.push({ pathname: '/run', params: { courseId: course.id } })
-                  }
+                  onPress={() => {
+                    if (hasActiveRun) {
+                      goToRunScreen();
+                      return;
+                    }
+
+                    router.push({ pathname: '/run', params: { courseId: course.id } });
+                  }}
                 >
-                  <Text style={styles.smallButtonText}>다시 달리기</Text>
+                  <Text style={styles.smallButtonText}>{hasActiveRun ? '진행 중 보기' : '다시 달리기'}</Text>
                 </Pressable>
               </View>
             ))}
@@ -303,6 +372,19 @@ const styles = StyleSheet.create({
   compactCard: {
     gap: 10,
     paddingVertical: 14
+  },
+  ongoingCard: {
+    gap: 10,
+    paddingVertical: 14
+  },
+  ongoingActions: {
+    flexDirection: 'row',
+    gap: 10
+  },
+  actionButton: {
+    flex: 1,
+    minHeight: 48,
+    paddingHorizontal: 12
   },
   weekCard: {
     gap: 10,
