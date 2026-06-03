@@ -75,7 +75,7 @@ export default function RunTrackingScreen() {
   } = useRunTracker();
 
   const mapRegion = useMemo(
-    () => (routeCoordinates.length ? getMapRegion(routeCoordinates) : getCourseMapRegion(selectedCourse)),
+    () => (routeCoordinates.length > 0 ? getMapRegion(routeCoordinates) : getCourseMapRegion(selectedCourse)),
     [routeCoordinates, selectedCourse]
   );
 
@@ -156,10 +156,14 @@ export default function RunTrackingScreen() {
             </View>
           </View>
           {selectedCourse ? (
-            <View style={commonStyles.metricRow}>
-              <Text style={commonStyles.metric}>{formatDistance(selectedCourse.distanceMeters)}</Text>
-              <Text style={commonStyles.metric}>{formatPace(selectedCourse.averagePaceSecondsPerKm)}</Text>
-            </View>
+            <>
+              <Text style={commonStyles.bodyText}>저장된 코스를 따라 달리는 중이에요</Text>
+              <View style={commonStyles.metricRow}>
+                <Text style={commonStyles.metric}>{formatDistance(selectedCourse.distanceMeters)}</Text>
+                <Text style={commonStyles.metric}>{formatElapsedTime(selectedCourse.durationSeconds)}</Text>
+                <Text style={commonStyles.metric}>{formatPace(selectedCourse.averagePaceSecondsPerKm)}</Text>
+              </View>
+            </>
           ) : (
             <Text style={commonStyles.bodyText}>
               저장된 코스를 불러오지 못해 일반 러닝으로 기록해요.
@@ -197,6 +201,18 @@ export default function RunTrackingScreen() {
           <View style={styles.mapHint}>
             <ActivityIndicator color={colors.primary} />
             <Text style={commonStyles.supportingText}>GPS 신호를 찾는 중이에요</Text>
+          </View>
+        ) : null}
+        {selectedCourse ? (
+          <View style={styles.mapLegend}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendLine, styles.savedCourseLine]} />
+              <Text style={styles.legendText}>회색: 저장 코스</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendLine, styles.currentRunLine]} />
+              <Text style={styles.legendText}>기본색: 현재 러닝</Text>
+            </View>
           </View>
         ) : null}
       </View>
@@ -288,7 +304,7 @@ const styles = StyleSheet.create({
   mapHint: {
     position: 'absolute',
     right: 16,
-    bottom: 16,
+    top: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -296,6 +312,40 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     backgroundColor: colors.surface
+  },
+  mapLegend: {
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    bottom: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: colors.surface
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6
+  },
+  legendLine: {
+    width: 22,
+    height: 4,
+    borderRadius: 8
+  },
+  savedCourseLine: {
+    backgroundColor: colors.muted
+  },
+  currentRunLine: {
+    backgroundColor: colors.primary
+  },
+  legendText: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: '800'
   },
   gpsNotice: {
     flexDirection: 'row',
