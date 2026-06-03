@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { HiButton } from '@/components/HiButton';
 import { HiCard } from '@/components/HiCard';
 import { HiCharacter } from '@/components/HiCharacter';
 import { HiProgressBar } from '@/components/HiProgressBar';
@@ -10,6 +12,7 @@ import { hiTheme } from '@/theme/theme';
 
 export default function ProgressScreen() {
   const { stats } = useRunStats();
+  const [isBadgeListVisible, setIsBadgeListVisible] = useState(false);
   const achievedBadges = stats.badges.filter((badge) => badge.achieved);
 
   return (
@@ -91,6 +94,32 @@ export default function ProgressScreen() {
         <Text style={styles.helper}>
           최근 배지: {stats.recentBadge ? stats.recentBadge.title : '아직 달성 전'}
         </Text>
+        <HiButton
+          label={isBadgeListVisible ? '배지 목록 접기' : '전체 배지 보기'}
+          variant="secondary"
+          onPress={() => setIsBadgeListVisible((current) => !current)}
+          style={styles.compactButton}
+        />
+        {isBadgeListVisible ? (
+          <View style={styles.badgeList}>
+            {stats.badges.map((badge) => (
+              <View key={badge.key} style={[styles.badgeItem, !badge.achieved && styles.lockedBadge]}>
+                <View style={[styles.badgeMark, badge.achieved && styles.achievedBadgeMark]}>
+                  <Ionicons
+                    name={badge.achieved ? 'medal' : 'lock-closed'}
+                    size={20}
+                    color={badge.achieved ? hiTheme.colors.yellow : hiTheme.colors.muted}
+                  />
+                </View>
+                <View style={styles.badgeText}>
+                  <Text style={styles.badgeTitle}>{badge.title}</Text>
+                  <Text style={styles.badgeDescription}>{badge.description}</Text>
+                </View>
+                <Text style={styles.badgeStatus}>{badge.statusText}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
       </HiCard>
 
       {!stats.hasRuns ? (
@@ -228,6 +257,53 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 18,
     backgroundColor: '#fff7d6'
+  },
+  compactButton: {
+    minHeight: 48
+  },
+  badgeList: {
+    gap: 8
+  },
+  badgeItem: {
+    minHeight: 68,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: hiTheme.colors.border
+  },
+  lockedBadge: {
+    opacity: 0.45
+  },
+  badgeMark: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+    backgroundColor: hiTheme.colors.surfaceSoft
+  },
+  achievedBadgeMark: {
+    backgroundColor: '#fff7d6'
+  },
+  badgeText: {
+    flex: 1
+  },
+  badgeTitle: {
+    color: hiTheme.colors.text,
+    fontSize: 14,
+    fontWeight: '900'
+  },
+  badgeDescription: {
+    color: hiTheme.colors.muted,
+    fontSize: 12,
+    lineHeight: 18
+  },
+  badgeStatus: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 12,
+    fontWeight: '900'
   },
   empty: {
     alignItems: 'center'
