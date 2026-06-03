@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker, Polyline } from 'react-native-maps';
@@ -64,6 +64,7 @@ export default function RunTrackingScreen() {
   const { courseId } = useLocalSearchParams<{ courseId?: string }>();
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [isCourseLoading, setIsCourseLoading] = useState(Boolean(courseId));
+  const hasRequestedStartRef = useRef(false);
   const {
     permissionDenied,
     status,
@@ -73,12 +74,15 @@ export default function RunTrackingScreen() {
     routeCoordinates,
     errorMessage,
     gpsSignalMessage,
+    activeSourceCourseId,
     startRun,
     pauseRun,
     resumeRun,
     finishRun,
     setErrorMessage
   } = useRunTracker();
+
+  const effectiveCourseId = courseId ?? activeSourceCourseId ?? undefined;
 
   const mapRegion = useMemo(
     () => (routeCoordinates.length > 0 ? getMapRegion(routeCoordinates) : getCourseMapRegion(selectedCourse)),
@@ -88,7 +92,7 @@ export default function RunTrackingScreen() {
   const isSavingRun = status === 'saving';
 
   useEffect(() => {
-    if (!courseId) {
+    if (!effectiveCourseId) {
       setSelectedCourse(null);
       setIsCourseLoading(false);
       return;
@@ -97,7 +101,7 @@ export default function RunTrackingScreen() {
     let isMounted = true;
 
     setIsCourseLoading(true);
-    localCourseRepository.findById(courseId).then((course) => {
+    localCourseRepository.findById(effectiveCourseId).then((course) => {
       if (isMounted) {
         setSelectedCourse(course);
         setIsCourseLoading(false);
@@ -107,13 +111,26 @@ export default function RunTrackingScreen() {
     return () => {
       isMounted = false;
     };
-  }, [courseId]);
+  }, [effectiveCourseId]);
 
   useEffect(() => {
-    startRun().catch(() => {
+    if (status === 'running' || status === 'paused' || status === 'saving') {
+      return;
+    }
+
+    if (hasRequestedStartRef.current) {
+      return;
+    }
+
+    if (effectiveCourseId && isCourseLoading) {
+      return;
+    }
+
+    hasRequestedStartRef.current = true;
+    startRun(selectedCourse?.id).catch(() => {
       setErrorMessage('GPS를 시작하지 못했어요. 잠시 후 다시 시도해 주세요.');
     });
-  }, [setErrorMessage, startRun]);
+  }, [effectiveCourseId, isCourseLoading, selectedCourse, setErrorMessage, startRun, status]);
 
   const handleFinish = async () => {
     const savedRun = await finishRun(undefined, selectedCourse?.id);
@@ -148,7 +165,7 @@ export default function RunTrackingScreen() {
           </Pressable>
         </View>
 
-        {courseId ? (
+        {effectiveCourseId ? (
           <HiCard tone={selectedCourse ? 'green' : 'default'} style={styles.courseCard}>
             <Text style={styles.label}>선택한 코스</Text>
             <Text style={styles.cardTitle}>
