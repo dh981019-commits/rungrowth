@@ -272,17 +272,15 @@ export default function RunDetailScreen() {
         )}
       </HiCard>
 
-      <HiCard style={styles.compactCard}>
-        <View style={styles.rowBetween}>
-          <View>
-            <Text style={styles.label}>획득 배지</Text>
-            <Text style={styles.cardTitle}>
-              {achievedBadges.length ? achievedBadges[0].title : '배지 도전 중'}
-            </Text>
+      {achievedBadges.length ? (
+        <HiCard style={styles.compactCard}>
+          <View style={styles.rowBetween}>
+            <View>
+              <Text style={styles.label}>획득 배지</Text>
+              <Text style={styles.cardTitle}>{achievedBadges[0].title}</Text>
+            </View>
+            <Ionicons name="medal" size={26} color={hiTheme.colors.yellow} />
           </View>
-          <Ionicons name="medal" size={26} color={hiTheme.colors.yellow} />
-        </View>
-        {achievedBadges.length ? (
           <View style={styles.badgeRow}>
             {achievedBadges.map((badge) => (
               <View key={badge.key} style={styles.badgePill}>
@@ -290,10 +288,8 @@ export default function RunDetailScreen() {
               </View>
             ))}
           </View>
-        ) : (
-          <Text style={styles.body}>러닝을 더 쌓으면 새로운 배지가 열려요.</Text>
-        )}
-      </HiCard>
+        </HiCard>
+      ) : null}
 
       <HiCard tone="green" style={styles.courseCtaCard}>
         <View style={styles.rowBetween}>
@@ -315,8 +311,6 @@ export default function RunDetailScreen() {
               style={styles.courseNameInput}
               value={courseName}
               onChangeText={setCourseName}
-              placeholder="내 러닝 코스"
-              placeholderTextColor={hiTheme.colors.muted}
               editable={!isSavingCourse}
             />
           </View>
