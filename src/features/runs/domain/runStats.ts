@@ -4,6 +4,7 @@ import {
   buildRunAchievementMap,
   calculatePersonalBests
 } from './runAchievements';
+import { calculateRunBadges, getRecentAchievedBadge } from './runBadges';
 import { formatDistance, formatElapsedTime, formatPace } from './runCalculations';
 import { calculateRunStreak } from './runStreak';
 import { getNextTierProgress } from './runTier';
@@ -45,6 +46,8 @@ export function buildRunStats(runs: RunRecord[]) {
   const latestAchievement = latestRun ? achievementMap.get(latestRun.id) ?? null : null;
   const weeklyGoal = calculateWeeklyGoal(runs);
   const streak = calculateRunStreak(runs);
+  const badges = calculateRunBadges(runs);
+  const recentBadge = getRecentAchievedBadge(badges);
 
   const pbRows = PB_TARGETS.map((target) => {
     const personalBest = personalBests.get(target.key);
@@ -86,6 +89,8 @@ export function buildRunStats(runs: RunRecord[]) {
       : '첫 PB를 만들어보세요',
     weeklyGoal,
     streak,
+    badges,
+    recentBadge,
     recentRuns: latestRuns.slice(0, 5).map((run) => {
       const achievement = achievementMap.get(run.id);
 
