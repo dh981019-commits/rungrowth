@@ -1,15 +1,15 @@
 # Runner's Hi
 
-Runner's Hi is a TypeScript Expo React Native MVP for guided running habits.
+Runner's Hi is a TypeScript Expo React Native MVP for GPS-based running growth.
 
-It uses Expo Router, bottom tabs, and local mock data only. There is no backend, GPS tracking, direct messaging, chat, comments, social feed, or meetup functionality.
+It uses Expo Router, bottom tabs, foreground GPS tracking, AsyncStorage run records, PB, Hi Point, tiers, weekly goals, and streaks. There is no login, direct messaging, chat, comments, social feed, or meetup functionality.
 
 ## Screens
 
-- Home: daily mission, recommended run, weekly distance goal, and start action
-- Progress: weekly goal progress, consistency, and planned run history
-- Courses: static recommended training routes with distance, elevation, duration, and focus
-- Profile: current plan, running totals, no-GPS mode, and best records
+- Home: growth summary, tier, weekly goal, streak, and start action
+- Progress: run totals, personal bests, weekly goal progress, streak, and recent runs
+- Courses: recommended training routes with distance, elevation, duration, and focus
+- Profile: current tier, Hi Point, running totals, streak, and best records
 
 ## Project Structure
 
@@ -24,7 +24,8 @@ app/
     profile.tsx
 src/
   components/
-  data/mockData.ts
+  features/runs/
+  lib/supabase.ts
   theme/
 ```
 
