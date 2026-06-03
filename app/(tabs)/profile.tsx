@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { HiCard } from '@/components/HiCard';
@@ -10,6 +10,9 @@ import { hiTheme } from '@/theme/theme';
 
 export default function ProfileScreen() {
   const { stats } = useRunStats();
+  const showPreparingAlert = () => {
+    Alert.alert('준비 중이에요', '이 기능은 다음 업데이트에서 제공할 예정이에요.');
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.screen}>
@@ -74,16 +77,16 @@ export default function ProfileScreen() {
 
       <HiCard style={styles.compactCard}>
         <Text style={styles.cardTitle}>설정 / 데이터 관리</Text>
-        <View style={styles.settingRow}>
+        <Pressable style={styles.settingRow} onPress={showPreparingAlert}>
           <Ionicons name="settings-outline" size={20} color={hiTheme.colors.text} />
           <Text style={styles.settingText}>앱 설정</Text>
           <Ionicons name="chevron-forward" size={18} color={hiTheme.colors.muted} />
-        </View>
-        <View style={styles.settingRow}>
+        </Pressable>
+        <Pressable style={styles.settingRow} onPress={showPreparingAlert}>
           <Ionicons name="server-outline" size={20} color={hiTheme.colors.text} />
           <Text style={styles.settingText}>저장 데이터 관리</Text>
           <Ionicons name="chevron-forward" size={18} color={hiTheme.colors.muted} />
-        </View>
+        </Pressable>
       </HiCard>
 
       <HiCard tone="blue" style={styles.compactCard}>
