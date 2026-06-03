@@ -49,6 +49,19 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="run-tab"
+        options={{
+          title: '달리기',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? 'play-circle' : 'play-circle-outline'}
+              size={30}
+              color={color}
+            />
+          )
+        }}
+      />
+      <Tabs.Screen
         name="progress"
         options={{
           title: '성장',
