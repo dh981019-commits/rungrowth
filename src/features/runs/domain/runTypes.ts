@@ -17,6 +17,7 @@ export type RunRecord = {
   distanceMeters: number;
   averagePaceSecondsPerKm: number | null;
   routeCoordinates: RunCoordinate[];
+  sourceCourseId?: string;
   note?: string;
 };
 
