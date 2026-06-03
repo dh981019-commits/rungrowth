@@ -108,7 +108,7 @@ export default function RunTrackingScreen() {
   }, [setErrorMessage, startRun]);
 
   const handleFinish = async () => {
-    const savedRun = await finishRun(note);
+    const savedRun = await finishRun(note, selectedCourse?.id);
 
     if (savedRun) {
       router.replace(`/run/${savedRun.id}` as Href);
