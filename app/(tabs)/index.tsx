@@ -22,7 +22,6 @@ export default function HomeScreen() {
     elapsedSeconds,
     distanceMeters,
     averagePaceSecondsPerKm,
-    routeCoordinates,
     finishRun
   } = useRunTracker();
   const [recentCourses, setRecentCourses] = useState<Course[]>([]);
@@ -82,25 +81,12 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <HiCard tone="green" style={styles.ctaCard}>
-        <View style={styles.ctaText}>
-          <Text style={styles.kicker}>{"Runner's Hi"}</Text>
-          <Text style={styles.ctaTitle}>지금 바로 기록을 시작해요</Text>
-          <HiButton
-            label={hasActiveRun ? '진행 중인 러닝 보기' : '달리기 시작'}
-            onPress={goToRunScreen}
-            style={styles.ctaButton}
-          />
-        </View>
-        <HiCharacter size="sm" mood="run" />
-      </HiCard>
-
       {hasActiveRun ? (
         <HiCard tone="blue" style={styles.ongoingCard}>
           <View style={styles.rowBetween}>
             <View>
-              <Text style={styles.label}>진행 중인 러닝</Text>
-              <Text style={styles.cardTitle}>{status === 'paused' ? '일시정지' : '러닝 중'}</Text>
+              <Text style={styles.cardTitle}>진행 중인 러닝</Text>
+              <Text style={styles.body}>기록은 계속 유지되고 있어요</Text>
             </View>
             <Ionicons
               name={status === 'paused' ? 'pause-circle' : 'radio-button-on'}
@@ -108,22 +94,94 @@ export default function HomeScreen() {
               color={hiTheme.colors.blue}
             />
           </View>
+          <Text style={styles.statusText}>{status === 'paused' ? '일시정지' : '러닝 중'}</Text>
           <View style={styles.statRow}>
-            <HiStatCard label="경과 시간" value={formatElapsedTime(elapsedSeconds)} />
+            <HiStatCard label="시간" value={formatElapsedTime(elapsedSeconds)} />
             <HiStatCard label="거리" value={formatDistance(distanceMeters)} />
             <HiStatCard label="평균 페이스" value={formatPace(averagePaceSecondsPerKm)} />
           </View>
-          {routeCoordinates.length > 0 ? (
-            <Text style={styles.helper}>경로 좌표 {routeCoordinates.length}개가 유지되고 있어요</Text>
-          ) : (
-            <Text style={styles.helper}>GPS 신호를 기다리는 중이에요</Text>
-          )}
           <View style={styles.ongoingActions}>
             <HiButton label="계속 보기" variant="secondary" onPress={goToRunScreen} style={styles.actionButton} />
             <HiButton label="러닝 종료" variant="danger" onPress={confirmFinishRun} style={styles.actionButton} />
           </View>
         </HiCard>
-      ) : null}
+      ) : (
+        <HiCard tone="green" style={styles.ctaCard}>
+          <View style={styles.ctaText}>
+            <Text style={styles.kicker}>{"Runner's Hi"}</Text>
+            <Text style={styles.ctaTitle}>오늘도 달려볼까요?</Text>
+            <HiButton label="달리기 시작" onPress={goToRunScreen} style={styles.ctaButton} />
+          </View>
+          <HiCharacter size="sm" mood="run" />
+        </HiCard>
+      )}
+
+      <HiCard style={styles.weekCard}>
+        <View style={styles.rowBetween}>
+          <Text style={styles.cardTitle}>이번 주</Text>
+          <Text style={styles.weekBadge}>{stats.weeklyGoal.message}</Text>
+        </View>
+        <View style={styles.statRow}>
+          <HiStatCard label="러닝 횟수" value={stats.weeklyGoal.runCountLabel.split(' ')[0]} />
+          <HiStatCard label="거리" value={stats.weeklyGoal.distanceLabel.split(' ')[0]} />
+          <HiStatCard label="연속" value={stats.streak.label} />
+        </View>
+        <HiProgressBar progress={stats.weeklyGoal.overallProgress} color={hiTheme.colors.blue} />
+      </HiCard>
+
+      <HiCard style={styles.compactCard}>
+        <View style={styles.rowBetween}>
+          <Text style={styles.cardTitle}>최근 러닝</Text>
+          {recentRun ? <Text style={styles.linkText}>{recentRun.date}</Text> : null}
+        </View>
+        {recentRun ? (
+          <View style={styles.recentRun}>
+            <HiStatCard label="거리" value={recentRun.distance} />
+            <HiStatCard label="시간" value={recentRun.duration} />
+            <HiStatCard label="페이스" value={recentRun.pace} />
+          </View>
+        ) : (
+          <Text style={styles.body}>첫 러닝을 완료하면 최근 기록이 여기에 보여요.</Text>
+        )}
+      </HiCard>
+
+      <HiCard style={styles.tierCard}>
+        <View style={styles.rowBetween}>
+          <View>
+            <Text style={styles.label}>내 티어</Text>
+            <Text style={styles.tier}>{stats.currentTier}</Text>
+          </View>
+          <Text style={styles.hp}>{stats.totalHp} HP</Text>
+        </View>
+        <HiProgressBar progress={stats.tierProgress} />
+        <Text style={styles.helper}>{stats.nextTierMessage}</Text>
+      </HiCard>
+
+      <HiCard style={styles.compactCard}>
+        <View style={styles.rowBetween}>
+          <View>
+            <Text style={styles.label}>최근 배지</Text>
+            <Text style={styles.cardTitle}>
+              {stats.recentBadge ? stats.recentBadge.title : '아직 달성 전'}
+            </Text>
+          </View>
+          <View style={styles.badgeIcon}>
+            <Ionicons name="trophy" size={24} color={hiTheme.colors.yellow} />
+          </View>
+        </View>
+        {recentBadges.length ? (
+          <View style={styles.badgeRow}>
+            {recentBadges.map((badge) => (
+              <View key={badge.key} style={styles.badgePill}>
+                <Ionicons name="medal" size={14} color={hiTheme.colors.yellow} />
+                <Text style={styles.badgePillText}>{badge.title}</Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.body}>첫 러닝을 완료하면 첫 배지를 받을 수 있어요.</Text>
+        )}
+      </HiCard>
 
       <HiCard style={styles.compactCard}>
         <View style={styles.rowBetween}>
@@ -158,73 +216,6 @@ export default function HomeScreen() {
           </View>
         ) : (
           <Text style={styles.body}>러닝 완료 후 마음에 드는 경로를 코스로 저장해보세요.</Text>
-        )}
-      </HiCard>
-
-      <HiCard style={styles.weekCard}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.cardTitle}>이번 주</Text>
-          <Text style={styles.weekBadge}>{stats.weeklyGoal.message}</Text>
-        </View>
-        <View style={styles.statRow}>
-          <HiStatCard label="러닝 횟수" value={stats.weeklyGoal.runCountLabel.split(' ')[0]} />
-          <HiStatCard label="거리" value={stats.weeklyGoal.distanceLabel.split(' ')[0]} />
-          <HiStatCard label="연속" value={stats.streak.label} />
-        </View>
-        <HiProgressBar progress={stats.weeklyGoal.overallProgress} color={hiTheme.colors.blue} />
-      </HiCard>
-
-      <HiCard style={styles.tierCard}>
-        <View style={styles.rowBetween}>
-          <View>
-            <Text style={styles.label}>내 티어</Text>
-            <Text style={styles.tier}>{stats.currentTier}</Text>
-          </View>
-          <Text style={styles.hp}>{stats.totalHp} HP</Text>
-        </View>
-        <HiProgressBar progress={stats.tierProgress} />
-        <Text style={styles.helper}>{stats.nextTierMessage}</Text>
-      </HiCard>
-
-      <HiCard style={styles.compactCard}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.cardTitle}>최근 러닝</Text>
-          {recentRun ? <Text style={styles.linkText}>{recentRun.date}</Text> : null}
-        </View>
-        {recentRun ? (
-          <View style={styles.recentRun}>
-            <HiStatCard label="거리" value={recentRun.distance} />
-            <HiStatCard label="시간" value={recentRun.duration} />
-            <HiStatCard label="페이스" value={recentRun.pace} />
-          </View>
-        ) : (
-          <Text style={styles.body}>첫 러닝을 완료하면 최근 기록이 여기에 보여요.</Text>
-        )}
-      </HiCard>
-
-      <HiCard style={styles.compactCard}>
-        <View style={styles.rowBetween}>
-          <View>
-            <Text style={styles.label}>최근 배지</Text>
-            <Text style={styles.cardTitle}>
-              {stats.recentBadge ? stats.recentBadge.title : '아직 달성 전'}
-            </Text>
-          </View>
-          <View style={styles.badgeIcon}>
-            <Ionicons name="trophy" size={24} color={hiTheme.colors.yellow} />
-          </View>
-        </View>
-        {recentBadges.length ? (
-          <View style={styles.badgeRow}>
-            {recentBadges.map((badge) => (
-              <View key={badge.key} style={styles.badgePill}>
-                <Ionicons name="medal" size={14} color={hiTheme.colors.yellow} />
-                <Text style={styles.badgePillText}>{badge.title}</Text>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <Text style={styles.body}>첫 러닝을 완료하면 첫 배지를 받을 수 있어요.</Text>
         )}
       </HiCard>
     </ScrollView>
@@ -332,6 +323,17 @@ const styles = StyleSheet.create({
     color: hiTheme.colors.greenDark,
     fontSize: 13,
     fontWeight: '800'
+  },
+  statusText: {
+    alignSelf: 'flex-start',
+    overflow: 'hidden',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: hiTheme.radius.pill,
+    color: hiTheme.colors.blue,
+    fontSize: 12,
+    fontWeight: '900',
+    backgroundColor: '#eaf3ff'
   },
   cardTitle: {
     color: hiTheme.colors.text,
