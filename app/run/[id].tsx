@@ -14,6 +14,7 @@ import MapView, { Marker, Polyline } from 'react-native-maps';
 
 import { ProgressBar } from '@/components/ProgressBar';
 import { localCourseRepository } from '@/features/courses/data/localCourseRepository';
+import { Course } from '@/features/courses/domain/courseTypes';
 import {
   formatDistance,
   formatElapsedTime,
@@ -56,6 +57,8 @@ export default function RunDetailScreen() {
   const [isCourseSaved, setIsCourseSaved] = useState(false);
   const [isSavingCourse, setIsSavingCourse] = useState(false);
   const [courseSaveMessage, setCourseSaveMessage] = useState<string | null>(null);
+  const [sourceCourse, setSourceCourse] = useState<Course | null>(null);
+  const [hasSourceCourseLookupFinished, setHasSourceCourseLookupFinished] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -83,6 +86,28 @@ export default function RunDetailScreen() {
     localCourseRepository.existsBySourceRunId(run.id).then((exists) => {
       if (isMounted) {
         setIsCourseSaved(exists);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [run]);
+
+  useEffect(() => {
+    if (!run?.sourceCourseId) {
+      setSourceCourse(null);
+      setHasSourceCourseLookupFinished(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    setHasSourceCourseLookupFinished(false);
+    localCourseRepository.findById(run.sourceCourseId).then((course) => {
+      if (isMounted) {
+        setSourceCourse(course);
+        setHasSourceCourseLookupFinished(true);
       }
     });
 
@@ -206,6 +231,47 @@ export default function RunDetailScreen() {
         </Text>
         <ProgressBar progress={runResult?.stats.tierProgress ?? 0} />
       </View>
+
+      {run.sourceCourseId ? (
+        <View style={commonStyles.card}>
+          <View style={commonStyles.rowBetween}>
+            <View style={commonStyles.flex}>
+              <Text style={commonStyles.cardLabel}>코스 러닝</Text>
+              <Text style={commonStyles.cardTitle}>
+                {sourceCourse ? '저장 코스로 달렸어요' : '저장 코스 기반 러닝 기록이에요'}
+              </Text>
+            </View>
+            <View style={commonStyles.iconBadge}>
+              <Ionicons name="map" size={24} color={colors.primary} />
+            </View>
+          </View>
+          {sourceCourse ? (
+            <>
+              <Text style={commonStyles.bodyText}>{sourceCourse.name}</Text>
+              <View style={styles.resultMetricRow}>
+                <View style={styles.resultMetric}>
+                  <Text style={commonStyles.cardLabel}>코스 거리</Text>
+                  <Text style={styles.resultMetricValue}>{formatDistance(sourceCourse.distanceMeters)}</Text>
+                </View>
+                <View style={styles.resultMetric}>
+                  <Text style={commonStyles.cardLabel}>이번 러닝 거리</Text>
+                  <Text style={styles.resultMetricValue}>{formatDistance(run.distanceMeters)}</Text>
+                </View>
+                <View style={styles.resultMetric}>
+                  <Text style={commonStyles.cardLabel}>평균 페이스</Text>
+                  <Text style={styles.resultMetricValue}>{formatPace(run.averagePaceSecondsPerKm)}</Text>
+                </View>
+              </View>
+            </>
+          ) : (
+            <Text style={commonStyles.bodyText}>
+              {hasSourceCourseLookupFinished
+                ? '연결된 코스를 찾지 못했지만 러닝 기록은 정상적으로 저장됐어요.'
+                : '저장 코스 정보를 불러오는 중이에요.'}
+            </Text>
+          )}
+        </View>
+      ) : null}
 
       <View style={commonStyles.card}>
         {runResult?.achievement.pbUpdates.length ? (
