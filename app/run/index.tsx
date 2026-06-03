@@ -160,9 +160,6 @@ export default function RunTrackingScreen() {
           <Text style={styles.gpsText}>
             GPS <Ionicons name="cellular" size={16} color={hiTheme.colors.green} />
           </Text>
-          <Pressable style={styles.iconButton}>
-            <Ionicons name="settings-outline" size={20} color={hiTheme.colors.text} />
-          </Pressable>
         </View>
 
         {effectiveCourseId ? (
@@ -242,9 +239,6 @@ export default function RunTrackingScreen() {
           </HiCard>
         ) : (
           <View style={styles.controlRow}>
-            <Pressable style={styles.sideButton}>
-              <Ionicons name="camera" size={22} color={hiTheme.colors.text} />
-            </Pressable>
             <Pressable style={styles.pauseButton} onPress={pauseRun}>
               <Ionicons name="pause" size={32} color="#ffffff" />
             </Pressable>
@@ -281,20 +275,12 @@ const styles = StyleSheet.create({
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between'
+    justifyContent: 'flex-start'
   },
   gpsText: {
     color: hiTheme.colors.text,
     fontSize: 14,
     fontWeight: '900'
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-    backgroundColor: hiTheme.colors.surfaceSoft
   },
   title: {
     color: hiTheme.colors.text,
