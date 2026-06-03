@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker, Polyline } from 'react-native-maps';
-import { type Href, router } from 'expo-router';
+import { type Href, router, useLocalSearchParams } from 'expo-router';
 
+import { localCourseRepository } from '@/features/courses/data/localCourseRepository';
+import { Course } from '@/features/courses/domain/courseTypes';
 import {
   formatDistance,
   formatElapsedTime,
@@ -36,8 +38,26 @@ function getMapRegion(routeCoordinates: RunCoordinate[]) {
   };
 }
 
+function getCourseMapRegion(course: Course | null) {
+  const firstCoordinate = course?.routeCoordinates[0];
+
+  if (!firstCoordinate) {
+    return fallbackRegion;
+  }
+
+  return {
+    latitude: firstCoordinate.latitude,
+    longitude: firstCoordinate.longitude,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01
+  };
+}
+
 export default function RunTrackingScreen() {
+  const { courseId } = useLocalSearchParams<{ courseId?: string }>();
   const [note, setNote] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [isCourseLoading, setIsCourseLoading] = useState(Boolean(courseId));
   const {
     permissionDenied,
     status,
@@ -54,7 +74,32 @@ export default function RunTrackingScreen() {
     setErrorMessage
   } = useRunTracker();
 
-  const mapRegion = useMemo(() => getMapRegion(routeCoordinates), [routeCoordinates]);
+  const mapRegion = useMemo(
+    () => (routeCoordinates.length ? getMapRegion(routeCoordinates) : getCourseMapRegion(selectedCourse)),
+    [routeCoordinates, selectedCourse]
+  );
+
+  useEffect(() => {
+    if (!courseId) {
+      setSelectedCourse(null);
+      setIsCourseLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    setIsCourseLoading(true);
+    localCourseRepository.findById(courseId).then((course) => {
+      if (isMounted) {
+        setSelectedCourse(course);
+        setIsCourseLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [courseId]);
 
   useEffect(() => {
     startRun().catch(() => {
@@ -92,11 +137,55 @@ export default function RunTrackingScreen() {
     <ScrollView contentContainerStyle={commonStyles.screen}>
       <View style={commonStyles.header}>
         <Text style={commonStyles.eyebrow}>GPS 러닝 기록</Text>
-        <Text style={commonStyles.screenTitle}>러닝 중</Text>
+        <Text style={commonStyles.screenTitle}>
+          {selectedCourse ? `${selectedCourse.name} 러닝` : '러닝 중'}
+        </Text>
       </View>
+
+      {courseId ? (
+        <View style={commonStyles.card}>
+          <View style={commonStyles.rowBetween}>
+            <View style={commonStyles.flex}>
+              <Text style={commonStyles.cardLabel}>선택한 코스</Text>
+              <Text style={commonStyles.cardTitle}>
+                {selectedCourse?.name ?? (isCourseLoading ? '코스를 불러오는 중이에요' : '코스를 찾지 못했어요')}
+              </Text>
+            </View>
+            <View style={commonStyles.iconBadge}>
+              <Ionicons name="map" size={24} color={colors.primary} />
+            </View>
+          </View>
+          {selectedCourse ? (
+            <View style={commonStyles.metricRow}>
+              <Text style={commonStyles.metric}>{formatDistance(selectedCourse.distanceMeters)}</Text>
+              <Text style={commonStyles.metric}>{formatPace(selectedCourse.averagePaceSecondsPerKm)}</Text>
+            </View>
+          ) : (
+            <Text style={commonStyles.bodyText}>
+              저장된 코스를 불러오지 못해 일반 러닝으로 기록해요.
+            </Text>
+          )}
+        </View>
+      ) : null}
 
       <View style={styles.mapWrap}>
         <MapView style={styles.map} region={mapRegion} showsUserLocation>
+          {selectedCourse?.routeCoordinates.length ? (
+            <Marker coordinate={selectedCourse.routeCoordinates[0]} title="코스 시작" />
+          ) : null}
+          {selectedCourse && selectedCourse.routeCoordinates.length > 1 ? (
+            <>
+              <Polyline
+                coordinates={selectedCourse.routeCoordinates}
+                strokeColor={colors.muted}
+                strokeWidth={4}
+              />
+              <Marker
+                coordinate={selectedCourse.routeCoordinates[selectedCourse.routeCoordinates.length - 1]}
+                title="코스 종료"
+              />
+            </>
+          ) : null}
           {routeCoordinates.length > 0 ? (
             <Marker coordinate={routeCoordinates[routeCoordinates.length - 1]} title="현재 위치" />
           ) : null}
