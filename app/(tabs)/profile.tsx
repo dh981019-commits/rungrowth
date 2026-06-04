@@ -50,13 +50,25 @@ export default function ProfileScreen() {
       <HiCard style={styles.compactCard}>
         <View style={styles.rowBetween}>
           <View>
-            <Text style={styles.cardTitle}>러닝 자산</Text>
-            <Text style={styles.body}>배지는 러닝을 완료하면 하나씩 열려요</Text>
+            <Text style={styles.cardTitle}>배지 수집 현황</Text>
+            <Text style={styles.body}>
+              배지 {stats.badgeCollection.achievedCount} / {stats.badgeCollection.totalCount}개 획득
+            </Text>
           </View>
-          <Text style={styles.badgeCount}>
-            {stats.badges.filter((badge) => badge.achieved).length} / {stats.badges.length}
-          </Text>
+          <Text style={styles.badgeCount}>{Math.round(stats.badgeCollection.progress * 100)}%</Text>
         </View>
+        <HiProgressBar progress={stats.badgeCollection.progress} color={hiTheme.colors.yellow} />
+        <View style={styles.nextBadgeBox}>
+          <Text style={styles.label}>다음 목표</Text>
+          <Text style={styles.badgeTitle}>{stats.badgeCollection.nextGoal.title}</Text>
+          <Text style={styles.body}>{stats.badgeCollection.nextGoal.progressLabel}</Text>
+          <HiProgressBar progress={stats.badgeCollection.nextGoal.progress} color={hiTheme.colors.blue} />
+        </View>
+        {stats.recentBadge ? (
+          <Text style={styles.helper}>최근 획득 배지: {stats.recentBadge.title}</Text>
+        ) : (
+          <Text style={styles.helper}>첫 러닝을 완료하면 첫 배지를 받을 수 있어요</Text>
+        )}
         {stats.badges.slice(0, 5).map((badge) => (
           <View key={badge.key} style={[styles.badgeRow, !badge.achieved && styles.locked]}>
             <View style={styles.badgeIcon}>
@@ -183,6 +195,12 @@ const styles = StyleSheet.create({
     color: hiTheme.colors.green,
     fontSize: 18,
     fontWeight: '900'
+  },
+  nextBadgeBox: {
+    gap: 6,
+    padding: 12,
+    borderRadius: hiTheme.radius.md,
+    backgroundColor: hiTheme.colors.surfaceSoft
   },
   badgeRow: {
     minHeight: 64,
