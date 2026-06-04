@@ -5,11 +5,25 @@ import { HiCard } from '@/components/HiCard';
 import { HiCharacter } from '@/components/HiCharacter';
 import { HiProgressBar } from '@/components/HiProgressBar';
 import { HiStatCard } from '@/components/HiStatCard';
+import { ProgressBar } from '@/components/ProgressBar';
 import { useRunStats } from '@/features/runs/presentation/useRunStats';
+import { colors } from '@/theme/colors';
+import { commonStyles } from '@/theme/commonStyles';
 import { hiTheme } from '@/theme/theme';
 
 export default function ProfileScreen() {
   const { stats } = useRunStats();
+  const achievedBadges = stats.badges.filter((badge) => badge.achieved);
+  const totalBadgeCount = stats.badges.length;
+  const achievedBadgeCount = achievedBadges.length;
+  const badgeProgress = totalBadgeCount ? achievedBadgeCount / totalBadgeCount : 0;
+  const recentAchievedBadge =
+    [...achievedBadges].sort(
+      (firstBadge, secondBadge) =>
+        new Date(secondBadge.achievedAt ?? 0).getTime() -
+        new Date(firstBadge.achievedAt ?? 0).getTime()
+    )[0] ?? null;
+
   const showPreparingAlert = () => {
     Alert.alert('준비 중이에요', '이 기능은 다음 업데이트에서 제공할 예정이에요.');
   };
@@ -60,20 +74,20 @@ export default function ProfileScreen() {
       </View>
 
       <HiCard style={styles.compactCard}>
-        <View style={styles.rowBetween}>
+        <View style={[commonStyles.rowBetween, styles.badgeHeader]}>
           <View>
             <Text style={styles.cardTitle}>배지 수집 현황</Text>
             <Text style={styles.body}>
-              배지 {stats.badgeCollection.achievedCount} / {stats.badgeCollection.totalCount}개 획득
+              배지 {achievedBadgeCount} / {totalBadgeCount}개 획득
             </Text>
           </View>
-          <Text style={styles.badgeCount}>{Math.round(stats.badgeCollection.progress * 100)}%</Text>
+          <Text style={styles.badgeCount}>{Math.round(badgeProgress * 100)}%</Text>
         </View>
         <View style={styles.statGrid}>
-          <HiStatCard label="전체 배지" value={`${stats.badgeCollection.totalCount}개`} />
-          <HiStatCard label="획득 배지" value={`${stats.badgeCollection.achievedCount}개`} />
+          <HiStatCard label="전체 배지" value={`${totalBadgeCount}개`} />
+          <HiStatCard label="획득 배지" value={`${achievedBadgeCount}개`} />
         </View>
-        <HiProgressBar progress={stats.badgeCollection.progress} color={hiTheme.colors.yellow} />
+        <ProgressBar progress={badgeProgress} />
         {!stats.hasRuns ? (
           <View style={styles.badgeEmptyState}>
             <HiCharacter size="sm" mood="sad" />
@@ -83,14 +97,8 @@ export default function ProfileScreen() {
             </View>
           </View>
         ) : null}
-        <View style={styles.nextBadgeBox}>
-          <Text style={styles.label}>다음 목표</Text>
-          <Text style={styles.badgeTitle}>{stats.badgeCollection.nextGoal.title}</Text>
-          <Text style={styles.body}>{stats.badgeCollection.nextGoal.progressLabel}</Text>
-          <HiProgressBar progress={stats.badgeCollection.nextGoal.progress} color={hiTheme.colors.blue} />
-        </View>
-        {stats.recentBadge ? (
-          <Text style={styles.helper}>최근 획득 배지: {stats.recentBadge.title}</Text>
+        {recentAchievedBadge ? (
+          <Text style={styles.helper}>최근 획득 배지: {recentAchievedBadge.title}</Text>
         ) : (
           <Text style={styles.helper}>첫 러닝을 완료하면 첫 배지를 받을 수 있어요</Text>
         )}
@@ -217,15 +225,9 @@ const styles = StyleSheet.create({
     backgroundColor: hiTheme.colors.greenSoft
   },
   badgeCount: {
-    color: hiTheme.colors.green,
+    color: colors.primary,
     fontSize: 18,
     fontWeight: '900'
-  },
-  nextBadgeBox: {
-    gap: 6,
-    padding: 12,
-    borderRadius: hiTheme.radius.md,
-    backgroundColor: hiTheme.colors.surfaceSoft
   },
   badgeEmptyState: {
     flexDirection: 'row',
@@ -234,6 +236,9 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: hiTheme.radius.md,
     backgroundColor: hiTheme.colors.surfaceSoft
+  },
+  badgeHeader: {
+    alignItems: 'flex-start'
   },
   tierPath: {
     flexDirection: 'row',
