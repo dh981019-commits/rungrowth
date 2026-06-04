@@ -1,141 +1,494 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { type Href, router } from 'expo-router';
+import { type Href, router, useFocusEffect } from 'expo-router';
 
-import { ProgressBar } from '@/components/ProgressBar';
-import { ScreenHeader } from '@/components/ScreenHeader';
-import { StatPill } from '@/components/StatPill';
+import { HiCard } from '@/components/HiCard';
+import { HiButton } from '@/components/HiButton';
+import { HiCharacter } from '@/components/HiCharacter';
+import { HiProgressBar } from '@/components/HiProgressBar';
+import { HiStatCard } from '@/components/HiStatCard';
+import { localCourseRepository } from '@/features/courses/data/localCourseRepository';
+import { Course } from '@/features/courses/domain/courseTypes';
+import { formatDistance, formatElapsedTime, formatPace } from '@/features/runs/domain/runCalculations';
 import { useRunStats } from '@/features/runs/presentation/useRunStats';
-import { commonStyles } from '@/theme/commonStyles';
-import { colors } from '@/theme/colors';
+import { useRunTracker } from '@/features/runs/presentation/useRunTracker';
+import { hiTheme } from '@/theme/theme';
 
 export default function HomeScreen() {
   const { stats } = useRunStats();
-  const hasRuns = stats.hasRuns;
+  const {
+    status,
+    elapsedSeconds,
+    distanceMeters,
+    averagePaceSecondsPerKm,
+    finishRun
+  } = useRunTracker();
+  const [recentCourses, setRecentCourses] = useState<Course[]>([]);
+  const recentRun = stats.recentRuns[0] ?? null;
+  const recentBadges = stats.badges.filter((badge) => badge.achieved).slice(0, 3);
+  const hasActiveRun = status === 'running' || status === 'paused';
+
+  useFocusEffect(
+    useCallback(() => {
+      let isMounted = true;
+
+      localCourseRepository.findAll().then((courses) => {
+        if (isMounted) {
+          setRecentCourses(courses.slice(0, 3));
+        }
+      });
+
+      return () => {
+        isMounted = false;
+      };
+    }, [])
+  );
+
+  const goToRunScreen = () => {
+    router.push('/run' as Href);
+  };
+
+  const confirmFinishRun = () => {
+    Alert.alert('러닝을 종료할까요?', '현재까지 기록된 러닝을 저장하고 결과 화면으로 이동해요.', [
+      {
+        text: '취소',
+        style: 'cancel'
+      },
+      {
+        text: '종료하기',
+        style: 'destructive',
+        onPress: async () => {
+          const savedRun = await finishRun();
+
+          if (savedRun) {
+            router.push(`/run/${savedRun.id}` as Href);
+          }
+        }
+      }
+    ]);
+  };
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.screen}>
-      <ScreenHeader eyebrow="오늘" title="Runner's Hi" />
-
-      <View style={commonStyles.heroCard}>
-        <View style={commonStyles.rowBetween}>
-          <View style={commonStyles.flex}>
-            <Text style={commonStyles.cardLabel}>성장 카드</Text>
-            <Text style={commonStyles.cardTitle}>
-              {hasRuns ? stats.currentTier : '첫 러닝을 시작해보세요'}
-            </Text>
-          </View>
-          <View style={commonStyles.iconBadge}>
-            <Ionicons name="trending-up" size={24} color={colors.primary} />
-          </View>
-        </View>
-        <View style={commonStyles.recordRow}>
-          <Text style={commonStyles.bodyText}>최근 PB</Text>
-          <Text style={commonStyles.recordValue}>{hasRuns ? stats.recentPbText : '기록 없음'}</Text>
-        </View>
-        <View style={commonStyles.metricRow}>
-          <Text style={commonStyles.metric}>Hi Point {stats.totalHp} HP</Text>
-          <Text style={commonStyles.metric}>{stats.nextTierMessage}</Text>
-        </View>
-        <Text style={commonStyles.bodyText}>{stats.growthMessage}</Text>
-      </View>
-
-      <View style={commonStyles.card}>
-        <View style={commonStyles.rowBetween}>
-          <View style={commonStyles.flex}>
-            <Text style={commonStyles.cardLabel}>러너 등급</Text>
-            <Text style={commonStyles.cardTitle}>{stats.currentTier}</Text>
-          </View>
-          <View style={commonStyles.iconBadge}>
-            <Ionicons name="ribbon" size={24} color={colors.primary} />
-          </View>
-        </View>
-        <View style={commonStyles.rowBetween}>
-          <Text style={commonStyles.bodyText}>Hi Point</Text>
-          <Text style={commonStyles.recordValue}>{stats.totalHp} HP</Text>
-        </View>
-        <ProgressBar progress={stats.tierProgress} />
-        <Text style={commonStyles.bodyText}>{stats.nextTierMessage}</Text>
-      </View>
-
-      <View style={commonStyles.statGrid}>
-        <StatPill label="총 러닝" value={`${stats.totalRuns}회`} />
-        <StatPill label="누적 거리" value={stats.totalDistance} />
-      </View>
-
-      <View style={commonStyles.card}>
-        <View style={commonStyles.rowBetween}>
-          <View style={commonStyles.flex}>
-            <Text style={commonStyles.cardLabel}>연속 러닝</Text>
-            <Text style={commonStyles.cardTitle}>{stats.streak.label}</Text>
-          </View>
-          <View style={commonStyles.iconBadge}>
-            <Ionicons name="flame" size={24} color={colors.primary} />
-          </View>
-        </View>
-        <Text style={commonStyles.bodyText}>{stats.streak.message}</Text>
-      </View>
-
-      <View style={commonStyles.card}>
-        <View style={commonStyles.rowBetween}>
-          <View style={commonStyles.flex}>
-            <Text style={commonStyles.cardLabel}>최근 획득 배지</Text>
-            <Text style={commonStyles.cardTitle}>
-              {stats.recentBadge ? stats.recentBadge.title : '아직 달성 전'}
-            </Text>
-          </View>
-          <View style={commonStyles.iconBadge}>
-            <Ionicons name="trophy" size={24} color={colors.primary} />
-          </View>
-        </View>
-        <Text style={commonStyles.bodyText}>
-          {stats.recentBadge
-            ? stats.recentBadge.description
-            : '첫 러닝을 완료하면 첫 배지를 받을 수 있어요'}
-        </Text>
-      </View>
-
-      <View style={commonStyles.card}>
-        <View style={commonStyles.rowBetween}>
-          <View style={commonStyles.flex}>
-            <Text style={commonStyles.cardLabel}>오늘의 러닝</Text>
-            <Text style={commonStyles.cardTitle}>가볍게 리듬 만들기</Text>
-          </View>
-          <View style={commonStyles.iconBadge}>
-            <Ionicons name="flash" size={24} color={colors.primary} />
-          </View>
-        </View>
-        <Text style={commonStyles.bodyText}>
-          무리하지 않고 기분 좋게, 이번 주 러닝 리듬을 이어가요.
-        </Text>
-      </View>
-
-      <View style={commonStyles.card}>
-        <Text style={commonStyles.cardLabel}>추천 코스</Text>
-        <Text style={commonStyles.cardTitle}>가까운 평지 코스</Text>
-        <View style={commonStyles.metricRow}>
-          <Text style={commonStyles.metric}>3km 전후</Text>
-          <Text style={commonStyles.metric}>쉬움</Text>
-          <Text style={commonStyles.metric}>회복</Text>
+    <ScrollView contentContainerStyle={styles.screen}>
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <Text style={styles.greeting}>러너님,</Text>
+          <Text style={styles.title}>오늘도 달릴 좋은 날이에요</Text>
         </View>
       </View>
 
-      <View style={commonStyles.card}>
-        <View style={commonStyles.rowBetween}>
-          <Text style={commonStyles.cardTitle}>주간 목표</Text>
-          <Text style={commonStyles.metric}>{stats.weeklyGoal.message}</Text>
-        </View>
-        <Text style={commonStyles.bodyText}>{stats.weeklyGoal.runCountLabel}</Text>
-        <ProgressBar progress={stats.weeklyGoal.runProgress} />
-        <Text style={commonStyles.bodyText}>{stats.weeklyGoal.distanceLabel}</Text>
-        <ProgressBar progress={stats.weeklyGoal.distanceProgress} />
-        <Text style={commonStyles.supportingText}>{stats.streak.message}</Text>
-      </View>
+      {hasActiveRun ? (
+        <HiCard tone="blue" style={styles.ongoingCard}>
+          <View style={styles.rowBetween}>
+            <View>
+              <Text style={styles.cardTitle}>진행 중인 러닝</Text>
+              <Text style={styles.body}>기록은 계속 유지되고 있어요</Text>
+            </View>
+            <Ionicons
+              name={status === 'paused' ? 'pause-circle' : 'radio-button-on'}
+              size={26}
+              color={hiTheme.colors.blue}
+            />
+          </View>
+          <Text style={styles.statusText}>{status === 'paused' ? '일시정지' : '러닝 중'}</Text>
+          <View style={styles.statRow}>
+            <HiStatCard label="시간" value={formatElapsedTime(elapsedSeconds)} />
+            <HiStatCard label="거리" value={formatDistance(distanceMeters)} />
+            <HiStatCard label="평균 페이스" value={formatPace(averagePaceSecondsPerKm)} />
+          </View>
+          <View style={styles.ongoingActions}>
+            <HiButton label="계속 보기" variant="secondary" onPress={goToRunScreen} style={styles.actionButton} />
+            <HiButton label="러닝 종료" variant="danger" onPress={confirmFinishRun} style={styles.actionButton} />
+          </View>
+        </HiCard>
+      ) : (
+        <HiCard tone="green" style={styles.ctaCard}>
+          <View style={styles.ctaText}>
+            <Text style={styles.kicker}>{"Runner's Hi"}</Text>
+            <Text style={styles.ctaTitle}>오늘도 달려볼까요?</Text>
+            <HiButton label="달리기 시작" onPress={goToRunScreen} style={styles.ctaButton} />
+          </View>
+          <HiCharacter size="sm" mood="run" />
+        </HiCard>
+      )}
 
-      <Pressable style={commonStyles.primaryButton} onPress={() => router.push('/run' as Href)}>
-        <Ionicons name="play" size={20} color="white" />
-        <Text style={commonStyles.primaryButtonText}>달리기 시작</Text>
-      </Pressable>
+      <HiCard tone="green" style={styles.growthCard}>
+        <View style={styles.rowBetween}>
+          <View>
+            <Text style={styles.label}>현재 티어</Text>
+            <Text style={styles.tier}>{stats.currentTier}</Text>
+          </View>
+          <Text style={styles.hp}>{stats.totalHp} HP</Text>
+        </View>
+        <HiProgressBar progress={stats.tierProgress} />
+        <Text style={styles.helper}>{stats.nextTierMessage}</Text>
+        <View style={styles.tierPath}>
+          {stats.tierRows.map((tier) => (
+            <View key={tier.fullName} style={[styles.tierStep, tier.state === 'current' && styles.currentTierStep]}>
+              <Ionicons
+                name={tier.state === 'completed' ? 'checkmark-circle' : tier.state === 'current' ? 'radio-button-on' : 'lock-closed'}
+                size={15}
+                color={tier.state === 'locked' ? hiTheme.colors.muted : hiTheme.colors.green}
+              />
+              <Text style={[styles.tierStepText, tier.state === 'locked' && styles.lockedText]}>{tier.name}</Text>
+            </View>
+          ))}
+        </View>
+        <Text style={styles.actionMessage}>{stats.nextActionMessage}</Text>
+      </HiCard>
+
+      <HiCard style={styles.weekCard}>
+        <View style={styles.rowBetween}>
+          <Text style={styles.cardTitle}>이번 주</Text>
+          <Text style={styles.weekBadge}>{stats.weeklyGoal.message}</Text>
+        </View>
+        <View style={styles.statRow}>
+          <HiStatCard label="러닝 횟수" value={stats.weeklyGoal.runCountLabel} />
+          <HiStatCard label="누적 거리" value={stats.weeklyGoal.distanceLabel} />
+          <HiStatCard label="연속" value={stats.streak.label} />
+        </View>
+        <HiProgressBar progress={stats.weeklyGoal.overallProgress} color={hiTheme.colors.blue} />
+      </HiCard>
+
+      <HiCard style={styles.compactCard}>
+        <View style={styles.rowBetween}>
+          <View>
+            <Text style={styles.label}>최근 성장</Text>
+            <Text style={styles.cardTitle}>{stats.recentBadge ? stats.recentBadge.title : '첫 보상을 기다리는 중'}</Text>
+          </View>
+          <View style={styles.badgeIcon}>
+            <Ionicons name="trophy" size={24} color={hiTheme.colors.yellow} />
+          </View>
+        </View>
+        {stats.hasRuns ? (
+          <View style={styles.growthSummary}>
+            <View style={styles.badgeRow}>
+              {recentBadges.map((badge) => (
+                <View key={badge.key} style={styles.badgePill}>
+                  <Ionicons name="medal" size={14} color={hiTheme.colors.yellow} />
+                  <Text style={styles.badgePillText}>{badge.title}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={styles.helper}>최근 PB: {stats.recentPbText}</Text>
+          </View>
+        ) : (
+          <Text style={styles.body}>첫 러닝을 시작하면 HP와 배지가 쌓여요.</Text>
+        )}
+      </HiCard>
+
+      <HiCard style={styles.compactCard}>
+        <View style={styles.rowBetween}>
+          <Text style={styles.cardTitle}>최근 러닝</Text>
+          {recentRun ? <Text style={styles.linkText}>{recentRun.date}</Text> : null}
+        </View>
+        {recentRun ? (
+          <View style={styles.recentRun}>
+            <HiStatCard label="거리" value={recentRun.distance} />
+            <HiStatCard label="시간" value={recentRun.duration} />
+            <HiStatCard label="페이스" value={recentRun.pace} />
+          </View>
+        ) : (
+          <Text style={styles.body}>첫 러닝을 완료하면 최근 기록이 여기에 보여요.</Text>
+        )}
+      </HiCard>
+
+      <HiCard style={styles.compactCard}>
+        <View style={styles.rowBetween}>
+          <Text style={styles.cardTitle}>최근 코스</Text>
+          <Text style={styles.linkText}>{recentCourses.length ? `${recentCourses.length}개` : '저장 전'}</Text>
+        </View>
+        {recentCourses.length ? (
+          <View style={styles.courseList}>
+            {recentCourses.map((course) => (
+              <View key={course.id} style={styles.courseRow}>
+                <View style={styles.courseInfo}>
+                  <Text style={styles.courseName}>{course.name}</Text>
+                  <Text style={styles.courseMeta}>
+                    {formatDistance(course.distanceMeters)} · {formatPace(course.averagePaceSecondsPerKm)}
+                  </Text>
+                </View>
+                <Pressable
+                  style={styles.smallButton}
+                  onPress={() => {
+                    if (hasActiveRun) {
+                      goToRunScreen();
+                      return;
+                    }
+
+                    router.push({ pathname: '/run', params: { courseId: course.id } });
+                  }}
+                >
+                  <Text style={styles.smallButtonText}>{hasActiveRun ? '진행 중 보기' : '다시 달리기'}</Text>
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.body}>러닝 완료 후 마음에 드는 경로를 코스로 저장해보세요.</Text>
+        )}
+      </HiCard>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    gap: 10,
+    paddingHorizontal: 18,
+    paddingTop: 52,
+    paddingBottom: 34,
+    backgroundColor: hiTheme.colors.background
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16
+  },
+  headerText: {
+    flex: 1
+  },
+  greeting: {
+    color: hiTheme.colors.text,
+    fontSize: 15,
+    fontWeight: '800'
+  },
+  title: {
+    color: hiTheme.colors.text,
+    fontSize: 24,
+    fontWeight: '900'
+  },
+  ctaCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    overflow: 'hidden'
+  },
+  ctaText: {
+    flex: 1,
+    gap: 8
+  },
+  kicker: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 13,
+    fontWeight: '900'
+  },
+  ctaTitle: {
+    color: hiTheme.colors.text,
+    fontSize: 19,
+    fontWeight: '900'
+  },
+  ctaButton: {
+    alignSelf: 'flex-start',
+    minHeight: 50,
+    paddingHorizontal: 28
+  },
+  body: {
+    color: hiTheme.colors.muted,
+    fontSize: 14,
+    lineHeight: 20
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 14
+  },
+  label: {
+    color: hiTheme.colors.muted,
+    fontSize: 12,
+    fontWeight: '900'
+  },
+  tier: {
+    color: hiTheme.colors.text,
+    fontSize: 21,
+    fontWeight: '900'
+  },
+  medal: {
+    width: 54,
+    height: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: '#fff7d6'
+  },
+  hp: {
+    color: hiTheme.colors.green,
+    fontSize: 18,
+    fontWeight: '900'
+  },
+  helper: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 13,
+    fontWeight: '800'
+  },
+  statusText: {
+    alignSelf: 'flex-start',
+    overflow: 'hidden',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: hiTheme.radius.pill,
+    color: hiTheme.colors.blue,
+    fontSize: 12,
+    fontWeight: '900',
+    backgroundColor: '#eaf3ff'
+  },
+  cardTitle: {
+    color: hiTheme.colors.text,
+    fontSize: 17,
+    fontWeight: '900'
+  },
+  weekBadge: {
+    overflow: 'hidden',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: hiTheme.radius.pill,
+    color: hiTheme.colors.greenDark,
+    fontSize: 12,
+    fontWeight: '900',
+    backgroundColor: hiTheme.colors.greenSoft
+  },
+  statRow: {
+    flexDirection: 'row',
+    gap: 10
+  },
+  recentRun: {
+    flexDirection: 'row',
+    gap: 10
+  },
+  linkText: {
+    color: hiTheme.colors.blue,
+    fontSize: 13,
+    fontWeight: '900'
+  },
+  badgeIcon: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: '#fff7d6'
+  },
+  compactCard: {
+    gap: 10,
+    paddingVertical: 14
+  },
+  growthCard: {
+    gap: 10,
+    paddingVertical: 14
+  },
+  growthSummary: {
+    gap: 8
+  },
+  actionMessage: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 14,
+    fontWeight: '900'
+  },
+  tierPath: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6
+  },
+  tierStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: hiTheme.radius.pill,
+    backgroundColor: hiTheme.colors.surface
+  },
+  currentTierStep: {
+    backgroundColor: '#d8f5df'
+  },
+  tierStepText: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 11,
+    fontWeight: '900'
+  },
+  lockedText: {
+    color: hiTheme.colors.muted
+  },
+  ongoingCard: {
+    gap: 10,
+    paddingVertical: 14
+  },
+  ongoingActions: {
+    flexDirection: 'row',
+    gap: 10
+  },
+  actionButton: {
+    flex: 1,
+    minHeight: 48,
+    paddingHorizontal: 12
+  },
+  weekCard: {
+    gap: 10,
+    paddingVertical: 14
+  },
+  tierCard: {
+    gap: 10,
+    paddingVertical: 14
+  },
+  courseList: {
+    gap: 8
+  },
+  courseRow: {
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: hiTheme.colors.border
+  },
+  courseInfo: {
+    flex: 1
+  },
+  courseName: {
+    color: hiTheme.colors.text,
+    fontSize: 14,
+    fontWeight: '900'
+  },
+  courseMeta: {
+    color: hiTheme.colors.muted,
+    fontSize: 12,
+    fontWeight: '800'
+  },
+  smallButton: {
+    minHeight: 34,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    borderRadius: hiTheme.radius.pill,
+    backgroundColor: hiTheme.colors.blue
+  },
+  smallButtonText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '900'
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  badgePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: hiTheme.radius.pill,
+    backgroundColor: hiTheme.colors.greenSoft
+  },
+  badgePillText: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 12,
+    fontWeight: '900'
+  }
+});

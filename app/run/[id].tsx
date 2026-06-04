@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,10 +8,14 @@ import {
   View
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { type Href, router, useLocalSearchParams } from 'expo-router';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
-import { ProgressBar } from '@/components/ProgressBar';
+import { HiButton } from '@/components/HiButton';
+import { HiCard } from '@/components/HiCard';
+import { HiCharacter } from '@/components/HiCharacter';
+import { HiProgressBar } from '@/components/HiProgressBar';
+import { HiStatCard } from '@/components/HiStatCard';
 import { localCourseRepository } from '@/features/courses/data/localCourseRepository';
 import { Course } from '@/features/courses/domain/courseTypes';
 import {
@@ -24,8 +27,7 @@ import { calculateRunAchievement } from '@/features/runs/domain/runAchievements'
 import { buildRunStats } from '@/features/runs/domain/runStats';
 import { RunRecord } from '@/features/runs/domain/runTypes';
 import { runRepository } from '@/features/runs/data/runRepository';
-import { commonStyles } from '@/theme/commonStyles';
-import { colors } from '@/theme/colors';
+import { hiTheme } from '@/theme/theme';
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -176,8 +178,8 @@ export default function RunDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.centerScreen}>
-        <ActivityIndicator color={colors.primary} />
-        <Text style={commonStyles.supportingText}>러닝 기록을 불러오는 중이에요</Text>
+        <ActivityIndicator color={hiTheme.colors.green} />
+        <Text style={styles.body}>러닝 기록을 불러오는 중이에요</Text>
       </View>
     );
   }
@@ -185,151 +187,30 @@ export default function RunDetailScreen() {
   if (!run) {
     return (
       <View style={styles.centerScreen}>
-        <Ionicons name="alert-circle-outline" size={30} color={colors.primary} />
-        <Text style={commonStyles.cardTitle}>기록을 찾지 못했어요</Text>
+        <Ionicons name="alert-circle-outline" size={30} color={hiTheme.colors.green} />
+        <Text style={styles.cardTitle}>기록을 찾지 못했어요</Text>
       </View>
     );
   }
 
   const canSaveCourse = run.routeCoordinates.length >= 2;
   const isCourseSaveDisabled = isCourseSaved || isSavingCourse || !canSaveCourse;
+  const achievedBadges = runResult?.stats.badges.filter((badge) => badge.achieved).slice(0, 3) ?? [];
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.screen}>
-      <View style={commonStyles.header}>
-        <Text style={commonStyles.eyebrow}>러닝 결과</Text>
-        <Text style={commonStyles.screenTitle}>러닝 완료!</Text>
+    <ScrollView contentContainerStyle={styles.screen}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.kicker}>러닝 완료!</Text>
+          <Text style={styles.title}>정말 잘했어요!</Text>
+        </View>
+        <HiCharacter size="sm" mood="champion" />
       </View>
 
-      <View style={commonStyles.heroCard}>
-        <View style={commonStyles.rowBetween}>
-          <View style={commonStyles.flex}>
-            <Text style={commonStyles.cardLabel}>성장 결과</Text>
-            <Text style={styles.resultTitle}>+{runResult?.achievement.earnedHp ?? 0} HP</Text>
-            <Text style={commonStyles.bodyText}>{runResult?.stats.currentTier ?? '브론즈 러너'}</Text>
-          </View>
-          <View style={commonStyles.iconBadge}>
-            <Ionicons name="sparkles" size={24} color={colors.primary} />
-          </View>
-        </View>
-        <View style={styles.resultMetricRow}>
-          <View style={styles.resultMetric}>
-            <Text style={commonStyles.cardLabel}>총 거리</Text>
-            <Text style={styles.resultMetricValue}>{formatDistance(run.distanceMeters)}</Text>
-          </View>
-          <View style={styles.resultMetric}>
-            <Text style={commonStyles.cardLabel}>총 시간</Text>
-            <Text style={styles.resultMetricValue}>{formatElapsedTime(run.durationSeconds)}</Text>
-          </View>
-          <View style={styles.resultMetric}>
-            <Text style={commonStyles.cardLabel}>평균 페이스</Text>
-            <Text style={styles.resultMetricValue}>{formatPace(run.averagePaceSecondsPerKm)}</Text>
-          </View>
-        </View>
-        <Text style={commonStyles.bodyText}>
-          {runResult?.stats.nextTierMessage ?? '다음 티어까지 성장 기록을 쌓아보세요'}
-        </Text>
-        <ProgressBar progress={runResult?.stats.tierProgress ?? 0} />
-      </View>
-
-      {run.sourceCourseId ? (
-        <View style={commonStyles.card}>
-          <View style={commonStyles.rowBetween}>
-            <View style={commonStyles.flex}>
-              <Text style={commonStyles.cardLabel}>코스 러닝</Text>
-              <Text style={commonStyles.cardTitle}>
-                {sourceCourse ? '저장 코스로 달렸어요' : '저장 코스 기반 러닝 기록이에요'}
-              </Text>
-            </View>
-            <View style={commonStyles.iconBadge}>
-              <Ionicons name="map" size={24} color={colors.primary} />
-            </View>
-          </View>
-          {sourceCourse ? (
-            <>
-              <Text style={commonStyles.bodyText}>{sourceCourse.name}</Text>
-              <View style={styles.resultMetricRow}>
-                <View style={styles.resultMetric}>
-                  <Text style={commonStyles.cardLabel}>코스 거리</Text>
-                  <Text style={styles.resultMetricValue}>{formatDistance(sourceCourse.distanceMeters)}</Text>
-                </View>
-                <View style={styles.resultMetric}>
-                  <Text style={commonStyles.cardLabel}>이번 러닝 거리</Text>
-                  <Text style={styles.resultMetricValue}>{formatDistance(run.distanceMeters)}</Text>
-                </View>
-                <View style={styles.resultMetric}>
-                  <Text style={commonStyles.cardLabel}>평균 페이스</Text>
-                  <Text style={styles.resultMetricValue}>{formatPace(run.averagePaceSecondsPerKm)}</Text>
-                </View>
-              </View>
-            </>
-          ) : (
-            <Text style={commonStyles.bodyText}>
-              {hasSourceCourseLookupFinished
-                ? '연결된 코스를 찾지 못했지만 러닝 기록은 정상적으로 저장됐어요.'
-                : '저장 코스 정보를 불러오는 중이에요.'}
-            </Text>
-          )}
-        </View>
-      ) : null}
-
-      <View style={commonStyles.card}>
-        {runResult?.achievement.pbUpdates.length ? (
-          <>
-            <Text style={commonStyles.cardTitle}>개인 최고기록 갱신!</Text>
-            {runResult.achievement.messages.map((message) => (
-              <View key={message} style={styles.celebrationRow}>
-                <Ionicons name="trophy" size={20} color={colors.accent} />
-                <Text style={[commonStyles.bodyText, styles.celebrationText]}>{message}</Text>
-              </View>
-            ))}
-            <Text style={commonStyles.metric}>+50 HP 보너스를 받았어요</Text>
-          </>
-        ) : (
-          <>
-            <Text style={commonStyles.cardTitle}>이번 러닝도 성장에 쌓였어요</Text>
-            <Text style={commonStyles.bodyText}>꾸준한 완주가 다음 기록을 만드는 중이에요.</Text>
-          </>
-        )}
-      </View>
-
-      <View style={commonStyles.card}>
-        <Text style={commonStyles.cardTitle}>획득 HP 내역</Text>
-        {runResult?.achievement.hpBreakdown.map((item) => (
-          <View key={item.label} style={commonStyles.recordRow}>
-            <Text style={commonStyles.bodyText}>{item.label}</Text>
-            <Text style={commonStyles.recordValue}>+{item.hp} HP</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={commonStyles.card}>
-        <View style={commonStyles.rowBetween}>
-          <View style={commonStyles.flex}>
-            <Text style={commonStyles.cardLabel}>티어 진행도</Text>
-            <Text style={commonStyles.cardTitle}>{runResult?.stats.currentTier ?? '브론즈 러너'}</Text>
-          </View>
-          <Text style={commonStyles.metric}>{runResult?.stats.totalHp ?? 0} HP</Text>
-        </View>
-        <ProgressBar progress={runResult?.stats.tierProgress ?? 0} />
-        <Text style={commonStyles.bodyText}>
-          {runResult?.stats.nextTierMessage ?? '다음 티어까지 성장 기록을 쌓아보세요'}
-        </Text>
-      </View>
-
-      <View style={styles.summaryGrid}>
-        <View style={styles.summaryCard}>
-          <Text style={commonStyles.cardLabel}>거리</Text>
-          <Text style={styles.summaryValue}>{formatDistance(run.distanceMeters)}</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={commonStyles.cardLabel}>시간</Text>
-          <Text style={styles.summaryValue}>{formatElapsedTime(run.durationSeconds)}</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={commonStyles.cardLabel}>평균 페이스</Text>
-          <Text style={styles.summaryValue}>{formatPace(run.averagePaceSecondsPerKm)}</Text>
-        </View>
+      <View style={styles.statsGrid}>
+        <HiStatCard label="거리" value={formatDistance(run.distanceMeters)} />
+        <HiStatCard label="시간" value={formatElapsedTime(run.durationSeconds)} />
+        <HiStatCard label="평균 페이스" value={formatPace(run.averagePaceSecondsPerKm)} />
       </View>
 
       <View style={styles.mapWrap}>
@@ -339,148 +220,264 @@ export default function RunDetailScreen() {
           ) : null}
           {run.routeCoordinates.length > 1 ? (
             <>
-              <Polyline coordinates={run.routeCoordinates} strokeColor={colors.primary} strokeWidth={5} />
-              <Marker
-                coordinate={run.routeCoordinates[run.routeCoordinates.length - 1]}
-                title="종료"
-              />
+              <Polyline coordinates={run.routeCoordinates} strokeColor={hiTheme.colors.green} strokeWidth={5} />
+              <Marker coordinate={run.routeCoordinates[run.routeCoordinates.length - 1]} title="종료" />
             </>
           ) : null}
         </MapView>
       </View>
 
-      <View style={commonStyles.card}>
-        <View style={commonStyles.rowBetween}>
-          <View style={commonStyles.flex}>
-            <Text style={commonStyles.cardLabel}>코스 저장</Text>
-            <Text style={commonStyles.cardTitle}>
-              {isCourseSaved ? '저장된 코스' : '이 경로를 코스로 저장'}
-            </Text>
+      <HiCard tone="green">
+        <View style={styles.rowBetween}>
+          <View>
+            <Text style={styles.label}>획득 Hi Point</Text>
+            <Text style={styles.hp}>+{runResult?.achievement.earnedHp ?? 0} HP</Text>
           </View>
-          <View style={commonStyles.iconBadge}>
-            <Ionicons name="map" size={24} color={colors.primary} />
+          <View style={styles.medal}>
+            <Ionicons name="sparkles" size={26} color={hiTheme.colors.yellow} />
           </View>
         </View>
-        <Text style={commonStyles.bodyText}>
-          {canSaveCourse
-            ? '마음에 드는 러닝 경로를 저장해두고 코스 탭에서 다시 확인할 수 있어요.'
-            : '지도 경로가 충분히 기록되지 않아 코스로 저장할 수 없어요.'}
-        </Text>
+        <Text style={styles.body}>{runResult?.stats.currentTier ?? '브론즈 러너'}</Text>
+        <HiProgressBar progress={runResult?.stats.tierProgress ?? 0} />
+        <Text style={styles.helper}>{runResult?.stats.nextTierMessage ?? '다음 티어까지 성장 기록을 쌓아보세요'}</Text>
+      </HiCard>
+
+      <HiCard style={styles.compactCard}>
+        <View style={styles.rowBetween}>
+          <View>
+            <Text style={styles.label}>연속 러닝</Text>
+            <Text style={styles.cardTitle}>{runResult?.stats.streak.label ?? '첫 연속 러닝'}</Text>
+          </View>
+          <Ionicons name="flame" size={26} color={hiTheme.colors.green} />
+        </View>
+        <Text style={styles.body}>{runResult?.stats.streak.message ?? '오늘의 러닝이 성장에 쌓였어요.'}</Text>
+      </HiCard>
+
+      <HiCard>
+        {runResult?.achievement.pbUpdates.length ? (
+          <>
+            <Text style={styles.cardTitle}>개인 최고기록 갱신!</Text>
+            {runResult.achievement.messages.map((message) => (
+              <View key={message} style={styles.iconRow}>
+                <Ionicons name="trophy" size={20} color={hiTheme.colors.yellow} />
+                <Text style={styles.body}>{message}</Text>
+              </View>
+            ))}
+          </>
+        ) : (
+          <>
+            <Text style={styles.cardTitle}>이번 러닝도 성장에 쌓였어요</Text>
+            <Text style={styles.body}>꾸준한 완주가 다음 기록을 만드는 중이에요.</Text>
+          </>
+        )}
+      </HiCard>
+
+      {achievedBadges.length ? (
+        <HiCard style={styles.compactCard}>
+          <View style={styles.rowBetween}>
+            <View>
+              <Text style={styles.label}>획득 배지</Text>
+              <Text style={styles.cardTitle}>{achievedBadges[0].title}</Text>
+            </View>
+            <Ionicons name="medal" size={26} color={hiTheme.colors.yellow} />
+          </View>
+          <View style={styles.badgeRow}>
+            {achievedBadges.map((badge) => (
+              <View key={badge.key} style={styles.badgePill}>
+                <Text style={styles.badgePillText}>{badge.title}</Text>
+              </View>
+            ))}
+          </View>
+        </HiCard>
+      ) : null}
+
+      <HiCard tone="green" style={styles.courseCtaCard}>
+        <View style={styles.rowBetween}>
+          <View style={styles.flex}>
+            <Text style={styles.label}>코스 저장</Text>
+            <Text style={styles.cardTitle}>{isCourseSaved ? '저장된 코스예요' : '마음에 든 경로를 남겨요'}</Text>
+            <Text style={styles.body}>
+              {canSaveCourse
+                ? '이 경로를 코스로 저장하면 다음에 바로 다시 달릴 수 있어요.'
+                : '지도 경로가 충분히 기록되지 않아 코스로 저장할 수 없어요.'}
+            </Text>
+          </View>
+          <HiCharacter size="sm" mood="happy" />
+        </View>
         {isCourseNameVisible && !isCourseSaved ? (
           <View style={styles.courseNameField}>
-            <Text style={commonStyles.cardLabel}>코스 이름</Text>
+            <Text style={styles.label}>코스 이름</Text>
             <TextInput
               style={styles.courseNameInput}
               value={courseName}
               onChangeText={setCourseName}
-              placeholder="내 러닝 코스"
-              placeholderTextColor={colors.muted}
               editable={!isSavingCourse}
             />
           </View>
         ) : null}
-        {courseSaveMessage ? (
-          <Text style={isCourseSaved ? styles.successText : styles.courseSaveMessage}>
-            {courseSaveMessage}
-          </Text>
-        ) : null}
-        <Pressable
-          style={[
-            commonStyles.primaryButton,
-            isCourseSaveDisabled && styles.disabledButton
-          ]}
+        {courseSaveMessage ? <Text style={styles.helper}>{courseSaveMessage}</Text> : null}
+        <HiButton
+          label={isCourseSaved ? '저장된 코스' : isSavingCourse ? '저장 중' : '이 경로를 코스로 저장'}
           onPress={handleSaveCourse}
           disabled={isCourseSaveDisabled}
-        >
-          <Ionicons name={isCourseSaved ? 'checkmark' : 'bookmark'} size={20} color="white" />
-          <Text style={commonStyles.primaryButtonText}>
-            {isCourseSaved ? '저장된 코스' : isSavingCourse ? '저장 중' : '이 경로를 코스로 저장'}
-          </Text>
-        </Pressable>
-      </View>
+        />
+      </HiCard>
 
-      <View style={commonStyles.card}>
-        <View style={commonStyles.recordRow}>
-          <Text style={commonStyles.bodyText}>시작 시간</Text>
-          <Text style={commonStyles.recordValue}>{formatDateTime(run.startedAt)}</Text>
+      {run.sourceCourseId ? (
+        <HiCard>
+          <Text style={styles.label}>코스 러닝</Text>
+          <Text style={styles.cardTitle}>
+            {sourceCourse ? '저장 코스로 달렸어요' : '저장 코스 기반 러닝 기록이에요'}
+          </Text>
+          {sourceCourse ? (
+            <View style={styles.statsGrid}>
+              <HiStatCard label="코스 거리" value={formatDistance(sourceCourse.distanceMeters)} />
+              <HiStatCard label="이번 거리" value={formatDistance(run.distanceMeters)} />
+            </View>
+          ) : (
+            <Text style={styles.body}>
+              {hasSourceCourseLookupFinished
+                ? '연결된 코스를 찾지 못했지만 러닝 기록은 정상적으로 저장됐어요.'
+                : '저장 코스 정보를 불러오는 중이에요.'}
+            </Text>
+          )}
+        </HiCard>
+      ) : null}
+
+      <HiCard>
+        <View style={styles.recordRow}>
+          <Text style={styles.body}>시작 시간</Text>
+          <Text style={styles.recordValue}>{formatDateTime(run.startedAt)}</Text>
         </View>
-        <View style={commonStyles.recordRow}>
-          <Text style={commonStyles.bodyText}>종료 시간</Text>
-          <Text style={commonStyles.recordValue}>{formatDateTime(run.endedAt)}</Text>
+        <View style={styles.recordRow}>
+          <Text style={styles.body}>종료 시간</Text>
+          <Text style={styles.recordValue}>{formatDateTime(run.endedAt)}</Text>
         </View>
         {run.note ? (
           <View>
-            <Text style={commonStyles.cardLabel}>메모</Text>
-            <Text style={commonStyles.bodyText}>{run.note}</Text>
+            <Text style={styles.label}>메모</Text>
+            <Text style={styles.body}>{run.note}</Text>
           </View>
         ) : null}
-      </View>
+      </HiCard>
+
+      <HiButton label="확인" onPress={() => router.replace('/' as Href)} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    gap: 16,
+    paddingHorizontal: 18,
+    paddingTop: 58,
+    paddingBottom: 34,
+    backgroundColor: hiTheme.colors.background
+  },
   centerScreen: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    backgroundColor: colors.background
+    backgroundColor: hiTheme.colors.background
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  kicker: {
+    color: hiTheme.colors.text,
+    fontSize: 16,
+    fontWeight: '900'
+  },
+  title: {
+    color: hiTheme.colors.text,
+    fontSize: 28,
+    fontWeight: '900'
   },
   mapWrap: {
-    height: 320,
+    height: 210,
     overflow: 'hidden',
-    borderRadius: 8,
+    borderRadius: hiTheme.radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt
+    borderColor: hiTheme.colors.border,
+    backgroundColor: hiTheme.colors.surfaceSoft
   },
   map: {
     flex: 1
   },
-  resultTitle: {
-    color: colors.text,
-    fontSize: 44,
-    fontWeight: '900'
-  },
-  resultMetricRow: {
+  statsGrid: {
     flexDirection: 'row',
     gap: 10
   },
-  resultMetric: {
-    flex: 1,
-    gap: 4,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: colors.surfaceAlt
+  rowBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 14
   },
-  resultMetricValue: {
-    color: colors.text,
-    fontSize: 17,
+  label: {
+    color: hiTheme.colors.muted,
+    fontSize: 12,
     fontWeight: '900'
   },
-  celebrationRow: {
+  cardTitle: {
+    color: hiTheme.colors.text,
+    fontSize: 20,
+    fontWeight: '900'
+  },
+  hp: {
+    color: hiTheme.colors.green,
+    fontSize: 32,
+    fontWeight: '900'
+  },
+  body: {
+    color: hiTheme.colors.muted,
+    fontSize: 14,
+    lineHeight: 20
+  },
+  helper: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 13,
+    fontWeight: '800'
+  },
+  medal: {
+    width: 54,
+    height: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: '#fff7d6'
+  },
+  iconRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8
   },
-  celebrationText: {
-    flex: 1
+  compactCard: {
+    paddingVertical: 14
   },
-  summaryGrid: {
+  courseCtaCard: {
     gap: 12
   },
-  summaryCard: {
-    gap: 4,
-    padding: 18,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface
+  flex: {
+    flex: 1
   },
-  summaryValue: {
-    color: colors.text,
-    fontSize: 28,
+  badgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8
+  },
+  badgePill: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: hiTheme.radius.pill,
+    backgroundColor: hiTheme.colors.surface
+  },
+  badgePillText: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 12,
     fontWeight: '900'
   },
   courseNameField: {
@@ -489,25 +486,24 @@ const styles = StyleSheet.create({
   courseNameInput: {
     minHeight: 48,
     paddingHorizontal: 14,
-    borderRadius: 8,
+    borderRadius: hiTheme.radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    color: colors.text,
+    borderColor: hiTheme.colors.border,
+    color: hiTheme.colors.text,
     fontSize: 16,
     fontWeight: '800',
-    backgroundColor: colors.surfaceAlt
+    backgroundColor: hiTheme.colors.surfaceSoft
   },
-  courseSaveMessage: {
-    color: colors.muted,
-    fontSize: 14,
-    fontWeight: '800'
+  recordRow: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12
   },
-  successText: {
-    color: colors.primaryDark,
+  recordValue: {
+    color: hiTheme.colors.text,
     fontSize: 14,
     fontWeight: '900'
-  },
-  disabledButton: {
-    opacity: 0.6
   }
 });

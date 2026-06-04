@@ -1,4 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  PropsWithChildren,
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
 import * as Location from 'expo-location';
 
 import {
@@ -8,6 +18,26 @@ import {
 import { shouldAcceptLocationUpdate } from '../domain/runLocationFilter';
 import { RunCoordinate, RunStatus } from '../domain/runTypes';
 import { runRepository } from '../data/runRepository';
+
+type RunTrackerContextValue = {
+  permissionDenied: boolean;
+  status: RunStatus;
+  startedAt: Date | null;
+  elapsedSeconds: number;
+  distanceMeters: number;
+  averagePaceSecondsPerKm: number | null;
+  routeCoordinates: RunCoordinate[];
+  errorMessage: string | null;
+  gpsSignalMessage: string | null;
+  activeSourceCourseId: string | null;
+  startRun: (sourceCourseId?: string) => Promise<void>;
+  pauseRun: () => void;
+  resumeRun: () => Promise<void>;
+  finishRun: (note?: string, sourceCourseId?: string) => Promise<{ id: string } | null>;
+  setErrorMessage: (message: string | null) => void;
+};
+
+const RunTrackerContext = createContext<RunTrackerContextValue | null>(null);
 
 function toRunCoordinate(location: Location.LocationObject): RunCoordinate {
   return {
@@ -28,7 +58,7 @@ function calculateElapsedSeconds(previousCoordinate: RunCoordinate, nextCoordina
   return Number.isFinite(elapsedSeconds) && elapsedSeconds > 0 ? elapsedSeconds : null;
 }
 
-export function useRunTracker() {
+export function RunTrackerProvider({ children }: PropsWithChildren) {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [status, setStatus] = useState<RunStatus>('idle');
   const [startedAt, setStartedAt] = useState<Date | null>(null);
@@ -37,6 +67,7 @@ export function useRunTracker() {
   const [routeCoordinates, setRouteCoordinates] = useState<RunCoordinate[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [gpsSignalMessage, setGpsSignalMessage] = useState<string | null>(null);
+  const [activeSourceCourseId, setActiveSourceCourseId] = useState<string | null>(null);
 
   const watchRef = useRef<Location.LocationSubscription | null>(null);
   const gpsSignalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,6 +76,7 @@ export function useRunTracker() {
   const distanceMetersRef = useRef(0);
   const routeCoordinatesRef = useRef<RunCoordinate[]>([]);
   const lastTickRef = useRef<number | null>(null);
+  const activeSourceCourseIdRef = useRef<string | null>(null);
 
   const stopWatching = useCallback(() => {
     watchRef.current?.remove();
@@ -111,7 +143,11 @@ export function useRunTracker() {
     );
   }, [showGpsSignalMessage, stopWatching]);
 
-  const startRun = useCallback(async () => {
+  const startRun = useCallback(async (sourceCourseId?: string) => {
+    if (status === 'running' || status === 'paused' || status === 'saving') {
+      return;
+    }
+
     setErrorMessage(null);
     const permission = await Location.requestForegroundPermissionsAsync();
 
@@ -126,16 +162,18 @@ export function useRunTracker() {
     distanceMetersRef.current = 0;
     routeCoordinatesRef.current = [];
     lastTickRef.current = Date.now();
+    activeSourceCourseIdRef.current = sourceCourseId ?? null;
 
     setStartedAt(now);
     setElapsedSeconds(0);
     setDistanceMeters(0);
     setRouteCoordinates([]);
+    setActiveSourceCourseId(sourceCourseId ?? null);
     setPermissionDenied(false);
     setGpsSignalMessage(null);
     setStatus('running');
     await startWatching();
-  }, [startWatching]);
+  }, [startWatching, status]);
 
   const pauseRun = useCallback(() => {
     if (status !== 'running') {
@@ -177,11 +215,14 @@ export function useRunTracker() {
         distanceMeters: distance,
         averagePaceSecondsPerKm: calculateAveragePace(durationSeconds, distance),
         routeCoordinates: routeCoordinatesRef.current,
-        sourceCourseId: sourceCourseId || undefined,
+        sourceCourseId: sourceCourseId || activeSourceCourseIdRef.current || undefined,
         note: note?.trim() || undefined
       });
 
       setStatus('finished');
+      setStartedAt(null);
+      setActiveSourceCourseId(null);
+      activeSourceCourseIdRef.current = null;
       return savedRun;
     },
     [status, stopWatching]
@@ -219,20 +260,50 @@ export function useRunTracker() {
     [stopWatching]
   );
 
-  return {
-    permissionDenied,
-    status,
-    startedAt,
-    elapsedSeconds,
-    distanceMeters,
-    averagePaceSecondsPerKm: calculateAveragePace(elapsedSeconds, distanceMeters),
-    routeCoordinates,
-    errorMessage,
-    gpsSignalMessage,
-    startRun,
-    pauseRun,
-    resumeRun,
-    finishRun,
-    setErrorMessage
-  };
+  const trackerValue = useMemo(
+    () => ({
+      permissionDenied,
+      status,
+      startedAt,
+      elapsedSeconds,
+      distanceMeters,
+      averagePaceSecondsPerKm: calculateAveragePace(elapsedSeconds, distanceMeters),
+      routeCoordinates,
+      errorMessage,
+      gpsSignalMessage,
+      activeSourceCourseId,
+      startRun,
+      pauseRun,
+      resumeRun,
+      finishRun,
+      setErrorMessage
+    }),
+    [
+      activeSourceCourseId,
+      distanceMeters,
+      elapsedSeconds,
+      errorMessage,
+      finishRun,
+      gpsSignalMessage,
+      pauseRun,
+      permissionDenied,
+      resumeRun,
+      routeCoordinates,
+      startRun,
+      startedAt,
+      status
+    ]
+  );
+
+  return createElement(RunTrackerContext.Provider, { value: trackerValue }, children);
+}
+
+export function useRunTracker() {
+  const tracker = useContext(RunTrackerContext);
+
+  if (!tracker) {
+    throw new Error('useRunTracker must be used inside RunTrackerProvider');
+  }
+
+  return tracker;
 }

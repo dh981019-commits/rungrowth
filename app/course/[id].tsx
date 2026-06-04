@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { type Href, router, useLocalSearchParams } from 'expo-router';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
+import { HiButton } from '@/components/HiButton';
+import { HiCard } from '@/components/HiCard';
+import { HiCharacter } from '@/components/HiCharacter';
+import { HiStatCard } from '@/components/HiStatCard';
 import { localCourseRepository } from '@/features/courses/data/localCourseRepository';
 import { Course } from '@/features/courses/domain/courseTypes';
 import {
@@ -11,8 +15,7 @@ import {
   formatElapsedTime,
   formatPace
 } from '@/features/runs/domain/runCalculations';
-import { commonStyles } from '@/theme/commonStyles';
-import { colors } from '@/theme/colors';
+import { hiTheme } from '@/theme/theme';
 
 function formatSavedDate(value: string) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -58,8 +61,8 @@ export default function CourseDetailScreen() {
   if (isLoading) {
     return (
       <View style={styles.centerScreen}>
-        <ActivityIndicator color={colors.primary} />
-        <Text style={commonStyles.supportingText}>코스를 불러오는 중이에요</Text>
+        <ActivityIndicator color={hiTheme.colors.green} />
+        <Text style={styles.body}>코스를 불러오는 중이에요</Text>
       </View>
     );
   }
@@ -67,34 +70,20 @@ export default function CourseDetailScreen() {
   if (!course) {
     return (
       <View style={styles.centerScreen}>
-        <Ionicons name="alert-circle-outline" size={30} color={colors.primary} />
-        <Text style={commonStyles.cardTitle}>코스를 찾지 못했어요</Text>
+        <HiCharacter size="md" mood="sad" />
+        <Text style={styles.cardTitle}>코스를 찾지 못했어요</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={commonStyles.screen}>
-      <View style={commonStyles.header}>
-        <Text style={commonStyles.eyebrow}>저장 코스</Text>
-        <Text style={commonStyles.screenTitle}>{course.name}</Text>
-      </View>
-
-      <View style={commonStyles.heroCard}>
-        <View style={commonStyles.rowBetween}>
-          <View style={commonStyles.flex}>
-            <Text style={commonStyles.cardLabel}>코스 요약</Text>
-            <Text style={commonStyles.cardTitle}>{formatDistance(course.distanceMeters)}</Text>
-            <Text style={commonStyles.bodyText}>{formatSavedDate(course.createdAt)} 저장</Text>
-          </View>
-          <View style={commonStyles.iconBadge}>
-            <Ionicons name="map" size={24} color={colors.primary} />
-          </View>
+    <ScrollView contentContainerStyle={styles.screen}>
+      <View style={styles.header}>
+        <View style={styles.flex}>
+          <Text style={styles.kicker}>저장 코스</Text>
+          <Text style={styles.title}>{course.name}</Text>
         </View>
-        <View style={commonStyles.metricRow}>
-          <Text style={commonStyles.metric}>{formatElapsedTime(course.durationSeconds)}</Text>
-          <Text style={commonStyles.metric}>{formatPace(course.averagePaceSecondsPerKm)}</Text>
-        </View>
+        <HiCharacter size="sm" mood="run" />
       </View>
 
       <View style={styles.mapWrap}>
@@ -104,41 +93,31 @@ export default function CourseDetailScreen() {
           ) : null}
           {course.routeCoordinates.length > 1 ? (
             <>
-              <Polyline
-                coordinates={course.routeCoordinates}
-                strokeColor={colors.primary}
-                strokeWidth={5}
-              />
-              <Marker
-                coordinate={course.routeCoordinates[course.routeCoordinates.length - 1]}
-                title="종료"
-              />
+              <Polyline coordinates={course.routeCoordinates} strokeColor={hiTheme.colors.green} strokeWidth={5} />
+              <Marker coordinate={course.routeCoordinates[course.routeCoordinates.length - 1]} title="종료" />
             </>
           ) : null}
         </MapView>
       </View>
 
-      <View style={commonStyles.card}>
-        <View style={commonStyles.recordRow}>
-          <Text style={commonStyles.bodyText}>거리</Text>
-          <Text style={commonStyles.recordValue}>{formatDistance(course.distanceMeters)}</Text>
-        </View>
-        <View style={commonStyles.recordRow}>
-          <Text style={commonStyles.bodyText}>시간</Text>
-          <Text style={commonStyles.recordValue}>{formatElapsedTime(course.durationSeconds)}</Text>
-        </View>
-        <View style={commonStyles.recordRow}>
-          <Text style={commonStyles.bodyText}>평균 페이스</Text>
-          <Text style={commonStyles.recordValue}>{formatPace(course.averagePaceSecondsPerKm)}</Text>
-        </View>
-        <View style={commonStyles.recordRow}>
-          <Text style={commonStyles.bodyText}>저장일</Text>
-          <Text style={commonStyles.recordValue}>{formatSavedDate(course.createdAt)}</Text>
-        </View>
+      <View style={styles.statGrid}>
+        <HiStatCard label="거리" value={formatDistance(course.distanceMeters)} />
+        <HiStatCard label="시간" value={formatElapsedTime(course.durationSeconds)} />
       </View>
+      <HiStatCard label="평균 페이스" value={formatPace(course.averagePaceSecondsPerKm)} />
 
-      <Pressable
-        style={commonStyles.primaryButton}
+      <HiCard>
+        <View style={styles.row}>
+          <Ionicons name="calendar-outline" size={20} color={hiTheme.colors.green} />
+          <View>
+            <Text style={styles.label}>저장일</Text>
+            <Text style={styles.recordValue}>{formatSavedDate(course.createdAt)}</Text>
+          </View>
+        </View>
+      </HiCard>
+
+      <HiButton
+        label="이 코스로 달리기"
         onPress={() =>
           router.push({
             pathname: '/run',
@@ -147,31 +126,83 @@ export default function CourseDetailScreen() {
             }
           } as Href)
         }
-      >
-        <Ionicons name="play" size={20} color="white" />
-        <Text style={commonStyles.primaryButtonText}>이 코스로 달리기</Text>
-      </Pressable>
+      />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    gap: 16,
+    paddingHorizontal: 18,
+    paddingTop: 58,
+    paddingBottom: 34,
+    backgroundColor: hiTheme.colors.background
+  },
   centerScreen: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    backgroundColor: colors.background
+    backgroundColor: hiTheme.colors.background
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12
+  },
+  flex: {
+    flex: 1
+  },
+  kicker: {
+    color: hiTheme.colors.green,
+    fontSize: 14,
+    fontWeight: '900'
+  },
+  title: {
+    color: hiTheme.colors.text,
+    fontSize: 27,
+    fontWeight: '900'
   },
   mapWrap: {
-    height: 360,
+    height: 340,
     overflow: 'hidden',
-    borderRadius: 8,
+    borderRadius: hiTheme.radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt
+    borderColor: hiTheme.colors.border,
+    backgroundColor: hiTheme.colors.surfaceSoft
   },
   map: {
     flex: 1
+  },
+  statGrid: {
+    flexDirection: 'row',
+    gap: 10
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12
+  },
+  label: {
+    color: hiTheme.colors.muted,
+    fontSize: 12,
+    fontWeight: '900'
+  },
+  cardTitle: {
+    color: hiTheme.colors.text,
+    fontSize: 20,
+    fontWeight: '900'
+  },
+  body: {
+    color: hiTheme.colors.muted,
+    fontSize: 14,
+    lineHeight: 20
+  },
+  recordValue: {
+    color: hiTheme.colors.text,
+    fontSize: 15,
+    fontWeight: '900'
   }
 });

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
-import { colors } from '@/theme/colors';
+import { hiTheme } from '@/theme/theme';
 
 type TabIconName = keyof typeof Ionicons.glyphMap;
 
@@ -18,19 +18,19 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.muted,
+        tabBarActiveTintColor: hiTheme.colors.green,
+        tabBarInactiveTintColor: hiTheme.colors.muted,
         tabBarStyle: {
           height: 82,
           paddingTop: 8,
           paddingBottom: 18,
           borderTopWidth: 1,
-          borderTopColor: colors.border,
-          backgroundColor: colors.surface
+          borderTopColor: hiTheme.colors.border,
+          backgroundColor: hiTheme.colors.surface
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: '700'
+          fontWeight: '900'
         }
       }}
     >
