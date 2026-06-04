@@ -20,11 +20,53 @@ export default function ProgressScreen() {
       <View style={styles.header}>
         <View style={styles.headerText}>
           <Text style={styles.kicker}>성장</Text>
-          <Text style={styles.title}>성장</Text>
-          <Text style={styles.body}>HP, PB, 배지로 러닝 성장을 확인해요</Text>
+          <Text style={styles.title}>이번 주 성장 리포트</Text>
+          <Text style={styles.body}>{stats.weeklyReport.summaryMessage}</Text>
         </View>
         <HiCharacter size="sm" mood={stats.hasRuns ? 'pb' : 'sad'} />
       </View>
+
+      <HiCard tone="blue" style={styles.compactCard}>
+        <View style={styles.rowBetween}>
+          <View>
+            <Text style={styles.label}>이번 주 획득 HP</Text>
+            <Text style={styles.bigValue}>+{stats.weeklyReport.earnedHp} HP</Text>
+          </View>
+          <View style={styles.iconBubble}>
+            <Ionicons name="sparkles" size={24} color={hiTheme.colors.blue} />
+          </View>
+        </View>
+        <View style={styles.statGrid}>
+          <HiStatCard label="러닝 횟수" value={stats.weeklyGoal.runCountLabel} />
+          <HiStatCard label="누적 거리" value={stats.weeklyGoal.distanceLabel} />
+        </View>
+      </HiCard>
+
+      <HiCard style={styles.compactCard}>
+        <View style={styles.rowBetween}>
+          <Text style={styles.cardTitle}>주간 목표 진행률</Text>
+          <Text style={styles.weekBadge}>{stats.weeklyGoal.message}</Text>
+        </View>
+        <HiProgressBar progress={stats.weeklyGoal.overallProgress} color={hiTheme.colors.blue} />
+        <View style={styles.statGrid}>
+          <HiStatCard label="횟수 진행률" value={`${Math.round(stats.weeklyGoal.runProgress * 100)}%`} />
+          <HiStatCard label="거리 진행률" value={`${Math.round(stats.weeklyGoal.distanceProgress * 100)}%`} />
+        </View>
+      </HiCard>
+
+      <HiCard style={styles.compactCard}>
+        <Text style={styles.cardTitle}>요일별 러닝 기록</Text>
+        <View style={styles.weekdayRow}>
+          {stats.weeklyReport.dayRows.map((day) => (
+            <View key={day.label} style={styles.weekdayItem}>
+              <View style={[styles.weekdayDot, day.hasRun && styles.activeWeekdayDot]}>
+                <Text style={[styles.weekdayLabel, day.hasRun && styles.activeWeekdayLabel]}>{day.label}</Text>
+              </View>
+              <Text style={styles.weekdayDistance}>{day.distanceLabel}</Text>
+            </View>
+          ))}
+        </View>
+      </HiCard>
 
       <HiCard tone="green" style={styles.compactCard}>
         <View style={styles.rowBetween}>
@@ -41,24 +83,37 @@ export default function ProgressScreen() {
           <Text style={styles.helper}>{stats.nextTierMessage}</Text>
         </View>
         <HiProgressBar progress={stats.tierProgress} />
-      </HiCard>
-
-      <HiCard style={styles.compactCard}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.cardTitle}>이번 주 목표</Text>
-          <Text style={styles.weekBadge}>{stats.weeklyGoal.message}</Text>
+        <View style={styles.tierPath}>
+          {stats.tierRows.map((tier) => (
+            <View key={tier.fullName} style={[styles.tierStep, tier.state === 'current' && styles.currentTierStep]}>
+              <Ionicons
+                name={tier.state === 'completed' ? 'checkmark-circle' : tier.state === 'current' ? 'radio-button-on' : 'lock-closed'}
+                size={15}
+                color={tier.state === 'locked' ? hiTheme.colors.muted : hiTheme.colors.green}
+              />
+              <Text style={[styles.tierStepText, tier.state === 'locked' && styles.lockedText]}>{tier.name}</Text>
+            </View>
+          ))}
         </View>
-        <View style={styles.statGrid}>
-          <HiStatCard label="러닝 횟수" value={stats.weeklyGoal.runCountLabel} />
-          <HiStatCard label="거리" value={stats.weeklyGoal.distanceLabel} />
-        </View>
-        <HiProgressBar progress={stats.weeklyGoal.overallProgress} color={hiTheme.colors.blue} />
       </HiCard>
 
       <View style={styles.statGrid}>
         <HiStatCard label="연속 러닝" value={stats.streak.label} />
         <HiStatCard label="총 러닝" value={`${stats.totalRuns}회`} />
       </View>
+
+      <HiCard style={styles.compactCard}>
+        <Text style={styles.cardTitle}>다음 행동 추천</Text>
+        <Text style={styles.actionMessage}>{stats.weeklyReport.actionMessage}</Text>
+      </HiCard>
+
+      {!stats.hasRuns ? (
+        <HiCard style={styles.empty}>
+          <HiCharacter size="md" mood="sad" />
+          <Text style={styles.cardTitle}>이번 주 러닝 기록이 아직 없어요</Text>
+          <Text style={styles.emptyBody}>첫 러닝을 하면 주간 리포트가 생성돼요.</Text>
+        </HiCard>
+      ) : null}
 
       <HiCard style={styles.compactCard}>
         <View style={styles.rowBetween}>
@@ -122,13 +177,6 @@ export default function ProgressScreen() {
         ) : null}
       </HiCard>
 
-      {!stats.hasRuns ? (
-        <HiCard style={styles.empty}>
-          <HiCharacter size="md" mood="sad" />
-          <Text style={styles.cardTitle}>러닝 기록이 쌓이면 성장 데이터가 표시돼요</Text>
-          <Text style={styles.emptyBody}>첫 러닝을 완료하면 HP, PB, 배지가 이 화면에 채워져요.</Text>
-        </HiCard>
-      ) : null}
     </ScrollView>
   );
 }
@@ -214,9 +262,74 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: hiTheme.colors.surface
   },
+  actionMessage: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 15,
+    fontWeight: '900'
+  },
   statGrid: {
     flexDirection: 'row',
     gap: 10
+  },
+  weekdayRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 6
+  },
+  weekdayItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 6
+  },
+  weekdayDot: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: hiTheme.radius.pill,
+    backgroundColor: hiTheme.colors.surfaceSoft
+  },
+  activeWeekdayDot: {
+    backgroundColor: hiTheme.colors.green
+  },
+  weekdayLabel: {
+    color: hiTheme.colors.muted,
+    fontSize: 12,
+    fontWeight: '900'
+  },
+  activeWeekdayLabel: {
+    color: '#ffffff'
+  },
+  weekdayDistance: {
+    color: hiTheme.colors.muted,
+    fontSize: 10,
+    fontWeight: '800',
+    textAlign: 'center'
+  },
+  tierPath: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6
+  },
+  tierStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: hiTheme.radius.pill,
+    backgroundColor: hiTheme.colors.surface
+  },
+  currentTierStep: {
+    backgroundColor: '#d8f5df'
+  },
+  tierStepText: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 11,
+    fontWeight: '900'
+  },
+  lockedText: {
+    color: hiTheme.colors.muted
   },
   weekBadge: {
     overflow: 'hidden',
