@@ -113,17 +113,69 @@ export default function HomeScreen() {
         </HiCard>
       )}
 
+      <HiCard tone="green" style={styles.growthCard}>
+        <View style={styles.rowBetween}>
+          <View>
+            <Text style={styles.label}>현재 티어</Text>
+            <Text style={styles.tier}>{stats.currentTier}</Text>
+          </View>
+          <Text style={styles.hp}>{stats.totalHp} HP</Text>
+        </View>
+        <HiProgressBar progress={stats.tierProgress} />
+        <Text style={styles.helper}>{stats.nextTierMessage}</Text>
+        <View style={styles.tierPath}>
+          {stats.tierRows.map((tier) => (
+            <View key={tier.fullName} style={[styles.tierStep, tier.state === 'current' && styles.currentTierStep]}>
+              <Ionicons
+                name={tier.state === 'completed' ? 'checkmark-circle' : tier.state === 'current' ? 'radio-button-on' : 'lock-closed'}
+                size={15}
+                color={tier.state === 'locked' ? hiTheme.colors.muted : hiTheme.colors.green}
+              />
+              <Text style={[styles.tierStepText, tier.state === 'locked' && styles.lockedText]}>{tier.name}</Text>
+            </View>
+          ))}
+        </View>
+        <Text style={styles.actionMessage}>{stats.nextActionMessage}</Text>
+      </HiCard>
+
       <HiCard style={styles.weekCard}>
         <View style={styles.rowBetween}>
           <Text style={styles.cardTitle}>이번 주</Text>
           <Text style={styles.weekBadge}>{stats.weeklyGoal.message}</Text>
         </View>
         <View style={styles.statRow}>
-          <HiStatCard label="러닝 횟수" value={stats.weeklyGoal.runCountLabel.split(' ')[0]} />
-          <HiStatCard label="거리" value={stats.weeklyGoal.distanceLabel.split(' ')[0]} />
+          <HiStatCard label="러닝 횟수" value={stats.weeklyGoal.runCountLabel} />
+          <HiStatCard label="누적 거리" value={stats.weeklyGoal.distanceLabel} />
           <HiStatCard label="연속" value={stats.streak.label} />
         </View>
         <HiProgressBar progress={stats.weeklyGoal.overallProgress} color={hiTheme.colors.blue} />
+      </HiCard>
+
+      <HiCard style={styles.compactCard}>
+        <View style={styles.rowBetween}>
+          <View>
+            <Text style={styles.label}>최근 성장</Text>
+            <Text style={styles.cardTitle}>{stats.recentBadge ? stats.recentBadge.title : '첫 보상을 기다리는 중'}</Text>
+          </View>
+          <View style={styles.badgeIcon}>
+            <Ionicons name="trophy" size={24} color={hiTheme.colors.yellow} />
+          </View>
+        </View>
+        {stats.hasRuns ? (
+          <View style={styles.growthSummary}>
+            <View style={styles.badgeRow}>
+              {recentBadges.map((badge) => (
+                <View key={badge.key} style={styles.badgePill}>
+                  <Ionicons name="medal" size={14} color={hiTheme.colors.yellow} />
+                  <Text style={styles.badgePillText}>{badge.title}</Text>
+                </View>
+              ))}
+            </View>
+            <Text style={styles.helper}>최근 PB: {stats.recentPbText}</Text>
+          </View>
+        ) : (
+          <Text style={styles.body}>첫 러닝을 시작하면 HP와 배지가 쌓여요.</Text>
+        )}
       </HiCard>
 
       <HiCard style={styles.compactCard}>
@@ -139,44 +191,6 @@ export default function HomeScreen() {
           </View>
         ) : (
           <Text style={styles.body}>첫 러닝을 완료하면 최근 기록이 여기에 보여요.</Text>
-        )}
-      </HiCard>
-
-      <HiCard style={styles.tierCard}>
-        <View style={styles.rowBetween}>
-          <View>
-            <Text style={styles.label}>내 티어</Text>
-            <Text style={styles.tier}>{stats.currentTier}</Text>
-          </View>
-          <Text style={styles.hp}>{stats.totalHp} HP</Text>
-        </View>
-        <HiProgressBar progress={stats.tierProgress} />
-        <Text style={styles.helper}>{stats.nextTierMessage}</Text>
-      </HiCard>
-
-      <HiCard style={styles.compactCard}>
-        <View style={styles.rowBetween}>
-          <View>
-            <Text style={styles.label}>최근 배지</Text>
-            <Text style={styles.cardTitle}>
-              {stats.recentBadge ? stats.recentBadge.title : '아직 달성 전'}
-            </Text>
-          </View>
-          <View style={styles.badgeIcon}>
-            <Ionicons name="trophy" size={24} color={hiTheme.colors.yellow} />
-          </View>
-        </View>
-        {recentBadges.length ? (
-          <View style={styles.badgeRow}>
-            {recentBadges.map((badge) => (
-              <View key={badge.key} style={styles.badgePill}>
-                <Ionicons name="medal" size={14} color={hiTheme.colors.yellow} />
-                <Text style={styles.badgePillText}>{badge.title}</Text>
-              </View>
-            ))}
-          </View>
-        ) : (
-          <Text style={styles.body}>첫 러닝을 완료하면 첫 배지를 받을 수 있어요.</Text>
         )}
       </HiCard>
 
@@ -361,6 +375,43 @@ const styles = StyleSheet.create({
   compactCard: {
     gap: 10,
     paddingVertical: 14
+  },
+  growthCard: {
+    gap: 10,
+    paddingVertical: 14
+  },
+  growthSummary: {
+    gap: 8
+  },
+  actionMessage: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 14,
+    fontWeight: '900'
+  },
+  tierPath: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6
+  },
+  tierStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: hiTheme.radius.pill,
+    backgroundColor: hiTheme.colors.surface
+  },
+  currentTierStep: {
+    backgroundColor: '#d8f5df'
+  },
+  tierStepText: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 11,
+    fontWeight: '900'
+  },
+  lockedText: {
+    color: hiTheme.colors.muted
   },
   ongoingCard: {
     gap: 10,
