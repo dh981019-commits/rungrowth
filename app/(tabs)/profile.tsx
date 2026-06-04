@@ -69,7 +69,20 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.badgeCount}>{Math.round(stats.badgeCollection.progress * 100)}%</Text>
         </View>
+        <View style={styles.statGrid}>
+          <HiStatCard label="전체 배지" value={`${stats.badgeCollection.totalCount}개`} />
+          <HiStatCard label="획득 배지" value={`${stats.badgeCollection.achievedCount}개`} />
+        </View>
         <HiProgressBar progress={stats.badgeCollection.progress} color={hiTheme.colors.yellow} />
+        {!stats.hasRuns ? (
+          <View style={styles.badgeEmptyState}>
+            <HiCharacter size="sm" mood="sad" />
+            <View style={styles.flex}>
+              <Text style={styles.badgeTitle}>첫 배지를 기다리고 있어요</Text>
+              <Text style={styles.body}>첫 러닝을 완료하면 첫 배지를 받을 수 있어요.</Text>
+            </View>
+          </View>
+        ) : null}
         <View style={styles.nextBadgeBox}>
           <Text style={styles.label}>다음 목표</Text>
           <Text style={styles.badgeTitle}>{stats.badgeCollection.nextGoal.title}</Text>
@@ -81,7 +94,7 @@ export default function ProfileScreen() {
         ) : (
           <Text style={styles.helper}>첫 러닝을 완료하면 첫 배지를 받을 수 있어요</Text>
         )}
-        {stats.badges.slice(0, 5).map((badge) => (
+        {stats.badges.map((badge) => (
           <View key={badge.key} style={[styles.badgeRow, !badge.achieved && styles.locked]}>
             <View style={styles.badgeIcon}>
               <Ionicons
@@ -210,6 +223,14 @@ const styles = StyleSheet.create({
   },
   nextBadgeBox: {
     gap: 6,
+    padding: 12,
+    borderRadius: hiTheme.radius.md,
+    backgroundColor: hiTheme.colors.surfaceSoft
+  },
+  badgeEmptyState: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
     padding: 12,
     borderRadius: hiTheme.radius.md,
     backgroundColor: hiTheme.colors.surfaceSoft
