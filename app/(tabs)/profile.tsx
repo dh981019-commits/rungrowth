@@ -36,6 +36,18 @@ export default function ProfileScreen() {
           </View>
         </View>
         <HiProgressBar progress={stats.tierProgress} />
+        <View style={styles.tierPath}>
+          {stats.tierRows.map((tier) => (
+            <View key={tier.fullName} style={[styles.tierStep, tier.state === 'current' && styles.currentTierStep]}>
+              <Ionicons
+                name={tier.state === 'completed' ? 'checkmark-circle' : tier.state === 'current' ? 'radio-button-on' : 'lock-closed'}
+                size={15}
+                color={tier.state === 'locked' ? hiTheme.colors.muted : hiTheme.colors.green}
+              />
+              <Text style={[styles.tierStepText, tier.state === 'locked' && styles.lockedText]}>{tier.name}</Text>
+            </View>
+          ))}
+        </View>
       </HiCard>
 
       <View style={styles.statGrid}>
@@ -201,6 +213,31 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: hiTheme.radius.md,
     backgroundColor: hiTheme.colors.surfaceSoft
+  },
+  tierPath: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6
+  },
+  tierStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: hiTheme.radius.pill,
+    backgroundColor: hiTheme.colors.surface
+  },
+  currentTierStep: {
+    backgroundColor: '#d8f5df'
+  },
+  tierStepText: {
+    color: hiTheme.colors.greenDark,
+    fontSize: 11,
+    fontWeight: '900'
+  },
+  lockedText: {
+    color: hiTheme.colors.muted
   },
   badgeRow: {
     minHeight: 64,
